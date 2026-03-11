@@ -1,5 +1,4 @@
-#ifndef DEFINES_HEADER_INCLUDED
-#define DEFINES_HEADER_INCLUDED
+#pragma once
 
 using u8 = unsigned char;
 using u16 = unsigned short;
@@ -17,13 +16,13 @@ using isize = signed long long;
 using f32 = float;
 using f64 = double;
 
-using cstr = char const*;
-using pstr = char*;
-using ptr = void*;
-using roptr = const void*;
+using cstr = char const *;
+using pstr = char *;
+using ptr = void *;
+using roptr = const void *;
 using byte = u8;
-using bytes = byte*;
-using robytes = const byte*;
+using bytes = byte *;
+using robytes = const byte *;
 using NSID = u32;
 
 #define AS_BYTES(x) reinterpret_cast<bytes>(x)
@@ -108,5 +107,3 @@ NS_STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 byte.");
 #endif
 
 #define OWNED
-
-#endif // DEFINES_HEADER_INCLUDED

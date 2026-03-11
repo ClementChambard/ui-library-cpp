@@ -1,71 +1,116 @@
-#include "BoxConstraints.hpp"
-#include "RenderContext.hpp"
-#include "Widget.hpp"
-#include <cmath>
-#include <cstdio>
-#include <memory>
-#include "widgets/Align.hpp"
-#include "widgets/Blob.hpp"
-#include "widgets/Constrained.hpp"
-#include "widgets/Flex.hpp"
-#include "widgets/Position.hpp"
-#include "App.hpp"
+#include "control/button.hpp"
+#include "gp/gp_circle.hpp"
+#include "gp/gp_event_dispatcher.hpp"
+#include "gp/gp_rect.hpp"
+#include "layout/row_widget.hpp"
+#include "render/frame_timing.hpp"
+#include "render/main_window.hpp"
+#include "render/renderer.hpp"
+#include "window/panel.hpp"
+#include "window/window_collection.hpp"
+#include <SDL3/SDL_events.h>
+#include <iostream>
 
-/*
- * <Widget "CustomWidget">
- *   <ConstrainedBox {150..Inf, 0..INFINITY}>
- *     <Row main_axis_size=min main_axis_alignment=space_between>
- *       <Blob 40x40 0xff0000ff />
- *       <ConstrainedBox tight_h(40)>
- *         <Column main_axis_alignment=space_around>
- *           <Blob 100x15 0xff0000ff />
- *           <Blob 90x15 0xff0000ff />
- *         </Column>
- *       </ConstrainedBox>
- *     </Row>
- *   </ConstrainedBox>
- * </Widget>
- *
- * <App 800x600>
- *   <Align alignment=bottom_right>
- *     <Column main_axis_size=min>
- *       <Expanded flex=2><Blob size={300., 20.}, color={255, 0, 0, 255} /></Expanded>
- *       <Expanded flex=1><Blob size={140., 30.}, color={0, 255, 0, 255} /></Expanded>
- *       <Blob 500x50 0x0000ffff />
- *       <Blob 400x100 0xffff00ff />
- *       <Blob 250x20 0x00ffffff />
- *       <Blob 200x50 0x000000ff />
- *       <Widget "CustomWidget" />
- *     </Column>
- *   </Align>
- *   <PositionBox 140 40 absolute><Elevate 10><Blob 200x200 0xff88ffff /></Elevate></PositionBox>
- * </App>
- */
+void pump_system_events(Widget *root, bool &is_running, Renderer &ren,
+                        GPEventDispatcher &gped, MainWindow &w) {
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+    case SDL_EVENT_QUIT:
+      is_running = false;
+      break;
+    case SDL_EVENT_MOUSE_MOTION:
+      gped.mouse_move(root, {e.motion.x, e.motion.y},
+                      {e.motion.xrel, e.motion.yrel});
+      break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+      gped.mouse_button_down(e.button.button, {e.button.x, e.button.y});
+      break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+      gped.mouse_button_up(e.button.button, {e.button.x, e.button.y});
+      break;
+    case SDL_EVENT_WINDOW_RESIZED:
+      w.wnd_size = {e.window.data1, e.window.data2};
+      ren.update_size(w.wnd_size);
+      break;
+    case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+      gped.mouse_leave();
+      break;
+    }
+  }
+}
 
-class CustomWidget : public ConstrainedBox {
-public:
-    CustomWidget() : ConstrainedBox(BoxConstraints { 150, INFINITY, 0, INFINITY }, wi<Row>(
-          wi<Blob>(40, 40, 0xff0000ff),
-          wi<ConstrainedBox>(BoxConstraints::tight_h(40), wi<Column>(
-              wi<Blob>(100, 15, 0xff0000ff),
-              wi<Blob>(90, 15, 0xff0000ff)
-          )->set_main_axis_alignment(Flex::MainAxisSpaceAround))
-      )->set_main_axis_size(Flex::MainAxisMin)->set_main_axis_alignment(Flex::MainAxisSpaceBetween)) {}
-};
+Widget *make_vue() {
+  WindowCollection *root = new WindowCollection;
+
+  Window *panel_1 = new Panel(root);
+  panel_1->set_pos({220.f, 200.f});
+  panel_1->set_size({800.f, 600.f});
+
+  Widget *row = new RowWidget(panel_1);
+  panel_1->set_content(row);
+
+  RectGPWidget *rect_1 = new RectGPWidget(row, {100, 100}, {0, 255, 255, 255});
+
+  RectGPWidget *rect_2 = new RectGPWidget(row, {100, 150}, {255, 0, 0, 255});
+  rect_2->m_radius = 20;
+
+  CircleGPWidget *circle = new CircleGPWidget(row, 50, {255, 0, 255, 255});
+
+  auto button = new MyWidget(row);
+  row->add_event_listener<Event, Widget>(
+      CLICK_EVENT, button, [](Event *, Widget *) { std::cout << "CLICK!\n"; });
+
+  Window *panel_2 = new Panel(root);
+  panel_2->set_pos({10.f, 100.f});
+  panel_2->set_size({200.f, 200.f});
+
+  Widget *row2 = new RowWidget(panel_2);
+  panel_2->set_content(row2);
+
+  rect_1 = new RectGPWidget(row2, {100, 100}, {0, 255, 255, 255});
+  rect_1->outline(10);
+
+  rect_2 = new RectGPWidget(row2, {100, 150}, {255, 0, 0, 255});
+  rect_2->m_radius = 20;
+  rect_2->outline(10);
+
+  circle = new CircleGPWidget(row2, 50, {255, 0, 255, 255});
+  circle->outline(10);
+
+  return root;
+}
 
 int main() {
-    App("Cpp UI Prototype", {800.f, 600.f}, wi<WidgetList>(
-        wi<Align>(Align::BottomRight, wi<Column>(
-             wi<Expanded>(wi<Blob>(300, 20, 0xff0000ff))->flex(2),
-             wi<Expanded>(wi<Blob>(140, 30, 0x00ff00ff))->flex(1),
-             wi<Blob>(500, 50, 0x0000ffff),
-             wi<Blob>(400, 100, 0xffff00ff),
-             wi<Blob>(250, 20, 0x00ffffff),
-             //wi<Button>(200, 50)->on_press([](){printf("pressed\n");}),
-             wi<Blob>(200, 50, 0x000000ff),
-             wi<CustomWidget>()
-        )->set_main_axis_size(Flex::MainAxisMin)),
-        wi<PositionBox>(140, 40, wi<Elevate>(10, new Blob({200.0, 200.0}, 0xff88ffff)))->absolute()
-    )).run();
-    return 0;
+  auto root = make_vue();
+
+  MainWindow main_window;
+  Renderer r;
+  main_window.init("test", {800, 600});
+  r.init();
+  r.update_size({800, 600});
+  GPEventDispatcher gped;
+  bool is_running = true;
+
+  while (is_running) {
+    frame_timer_start();
+
+    pump_system_events(root, is_running, r, gped, main_window);
+
+    // TODO: don't do it always
+    root->lay(r.wnd_size, r.wnd_size);
+    r.cmd_list.clear();
+    root->render_at({}, r.cmd_list);
+    r.render();
+
+    main_window.swap();
+
+    frame_timer_end();
+  }
+
+  r.cleanup();
+  main_window.cleanup();
+  delete root;
+
+  return 0;
 }
