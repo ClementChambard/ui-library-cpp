@@ -13,14 +13,15 @@ void PolygonGPWidget::render_at(glm::vec2 pos, CmdList &out_commands) const {
   }
 }
 
-void PolygonGPWidget::lay(glm::vec2 min_size, glm::vec2 max_size) {
-  if (m_computed_size.x < max_size.x) {
-    m_scale.x = max_size.x / m_computed_size.x;
+void PolygonGPWidget::lay(LayContext ctx) {
+  if (m_computed_size.x < ctx.max_size.x) {
+    m_scale.x = ctx.max_size.x / m_computed_size.x;
   }
-  if (m_computed_size.y < max_size.y) {
-    m_scale.y = max_size.y / m_computed_size.y;
+  if (m_computed_size.y < ctx.max_size.y) {
+    m_scale.y = ctx.max_size.y / m_computed_size.y;
   }
-  m_current_size = glm::clamp(min_size, m_computed_size * m_scale, max_size);
+  m_current_size =
+      glm::clamp(m_computed_size * m_scale, ctx.min_size, ctx.max_size);
 }
 
 void PolygonGPWidget::calculate_size() {

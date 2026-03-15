@@ -2,16 +2,16 @@
 
 #include "control_widget.hpp"
 
-static constexpr u32 CLICK_EVENT = 200;
-
-struct Button : ControlWidget {
-  Button(Widget *parent = nullptr);
-  ~Button();
+struct TestTextInput : ControlWidget {
+  TestTextInput(Widget *parent = nullptr);
+  ~TestTextInput();
 
   void render_at(glm::vec2 pos, CmdList &out_commands) const override;
   void lay(LayContext ctx) override;
   struct GPWidget *get_hovered_gp(glm::vec2 pos) override;
+
   void on_key(Key k) override;
+  void on_text(char const *text) override;
 
   void set_text(std::string const &text);
 
@@ -19,13 +19,5 @@ struct Button : ControlWidget {
   Font *m_font = nullptr;
 
 private:
-  bool m_hovering = false;
-  bool m_pressing = false;
   struct RectGPWidget *m_pick_rect = nullptr;
-
-  void on_drag_end(Event *);
-  void on_enter(Event *);
-  void on_leave(Event *);
-  void on_press(MouseButtonEvent *e);
-  void on_release(MouseButtonEvent *e);
 };

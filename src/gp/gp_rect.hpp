@@ -6,10 +6,11 @@ struct RectGPWidget : GPWidget {
   RectGPWidget(Widget *parent, glm::vec2 size, Color color)
       : GPWidget(parent), m_size(size), m_color(color) {
     m_current_size = size;
+    set_min_max_size(size, size);
   }
 
   virtual void render_at(glm::vec2 pos, CmdList &out_commands) const override;
-  virtual void lay(glm::vec2 min_size, glm::vec2 max_size) override;
+  virtual void lay(LayContext ctx) override;
 
   void outline(f32 outline_size = 1.f);
 
@@ -18,4 +19,6 @@ struct RectGPWidget : GPWidget {
   f32 m_radius = 0.f; // TODO: different radius per corner ??
   glm::vec2 m_size{};
   Color m_color{};
+
+  static RectGPWidget *make_event_handle(Widget *parent, glm::vec2 size);
 };

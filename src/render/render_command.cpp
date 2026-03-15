@@ -96,31 +96,44 @@ void draw_triangle(CmdList &cmds, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3,
                   }});
 }
 
-void draw_text(CmdList &cmds, glm::vec2 pos, std::string const &text,
+void draw_circle(CmdList &cmds, glm::vec2 center, f32 radius, Color c) {
+  draw_rectangle(cmds, center - glm::vec2(radius, radius),
+                 glm::vec2(radius, radius) * 2.f, c, radius);
+}
+
+void draw_circle_outline(CmdList &cmds, glm::vec2 center, f32 radius, Color c,
+                         f32 outline_size) {
+  draw_rectangle_outline(cmds, center - glm::vec2(radius, radius),
+                         glm::vec2(radius, radius) * 2.f, c, radius,
+                         outline_size);
+}
+
+void draw_text(CmdList &cmds, glm::vec2 pos, std::string const &text, Color c,
                Font *font) {
   cmds.push_back({.text = {
                       .kind = RenderCommand_TEXT,
                       .pos = pos,
                       .text = strdup(text.c_str()),
                       .font = font,
-                      .multiline = false,
+                      .col = c,
                       .wrap_width = -1.f,
+                      .multiline = false,
                   }});
 }
 void draw_text_multiline(CmdList &cmds, glm::vec2 pos, std::string const &text,
-                         Font *font) {
-  draw_text(cmds, pos, text, font);
+                         Color c, Font *font) {
+  draw_text(cmds, pos, text, c, font);
   cmds.back().text.multiline = true;
 }
 void draw_text_wrap(CmdList &cmds, glm::vec2 pos, std::string const &text,
-                    f32 wrap_width, Font *font) {
-  draw_text(cmds, pos, text, font);
+                    Color c, f32 wrap_width, Font *font) {
+  draw_text(cmds, pos, text, c, font);
   cmds.back().text.wrap_width = wrap_width;
 }
 void draw_text_multiline_wrap(CmdList &cmds, glm::vec2 pos,
-                              std::string const &text, f32 wrap_width,
+                              std::string const &text, Color c, f32 wrap_width,
                               Font *font) {
-  draw_text(cmds, pos, text, font);
+  draw_text(cmds, pos, text, c, font);
   cmds.back().text.wrap_width = wrap_width;
   cmds.back().text.multiline = true;
 }

@@ -2,6 +2,7 @@
 
 #include "../defines.hpp"
 #include <glm/glm.hpp>
+#include <optional>
 #include <string>
 
 struct Font {
@@ -28,4 +29,10 @@ struct Font {
   glm::vec2 calc_string_size(std::string s, bool accept_newline = false);
   u32 trunc_char_count(std::string s, std::string trunc_s, f32 width_available);
   glm::vec2 calc_string_wrap(std::string s, f32 width_available);
+
+  std::optional<glm::vec4> get_char_uvs(char c);
+  glm::vec4 get_char_rect(char c, glm::vec2 cursor, glm::vec2 scale = {1, 1});
+  void advance(char c, glm::vec2 &cursor, glm::vec2 scale = {1, 1});
+
+  static Font *DEFAULT;
 };

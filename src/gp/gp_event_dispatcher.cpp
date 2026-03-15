@@ -1,4 +1,5 @@
 #include "gp_event_dispatcher.hpp"
+#include "../window/window_manager.hpp"
 
 void GPEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos) {
   if (cur) {
@@ -35,17 +36,18 @@ void GPEventDispatcher::mouse_leave() {
   pressing = nullptr;
 }
 
-void GPEventDispatcher::mouse_move(Widget *root, glm::vec2 pos, glm::vec2 rel) {
+void GPEventDispatcher::mouse_move(glm::vec2 pos, glm::vec2 rel) {
+  mouse_pos = pos;
   if (pressing && !dragging) {
     dragging = pressing;
     Event e(MOUSE_DRAG_START_EVENT);
     dragging->dispatch_event(&e);
   }
-  if (dragging) {
+  if (dragging && rel != glm::vec2{0, 0}) {
     MouseDragEvent evt(rel);
     dragging->dispatch_event(&evt);
   }
-  GPWidget *gp = root->get_hovered_gp(pos);
+  GPWidget *gp = WindowManager::INSTANCE->get_hovered_gp(pos);
   if (gp == cur)
     return;
   if (cur) {

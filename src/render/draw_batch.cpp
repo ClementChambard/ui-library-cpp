@@ -1,4 +1,5 @@
 #include "draw_batch.hpp"
+#include "../base/font.hpp"
 #include "draw_batch_state.hpp"
 #include <GL/glew.h>
 #include <cassert>
@@ -81,10 +82,33 @@ void DrawBatch::submit() {
     return;
   usize v_data_size = s->vertices.size() * sizeof(s->vertices[0]);
   usize i_data_size = s->indices.size() * sizeof(s->indices[0]);
-  glNamedBufferData(s->vbo_id, v_data_size, s->vertices.data(), GL_DYNAMIC_DRAW);
+  glNamedBufferData(s->vbo_id, v_data_size, s->vertices.data(),
+                    GL_DYNAMIC_DRAW);
   glNamedBufferData(s->ibo_id, i_data_size, s->indices.data(), GL_DYNAMIC_DRAW);
   glBindVertexArray(s->vao_id);
   glDrawElements(GL_TRIANGLES, s->indices.size(), GL_UNSIGNED_SHORT, nullptr);
   s->vertices.clear();
   s->indices.clear();
+}
+
+void DrawBatch::draw_text(glm::vec2 pos, Font *f, char const *text, Color col) {
+  if (f == nullptr || text == nullptr)
+    return;
+  auto *s = reinterpret_cast<DrawBatchState *>(state);
+  auto tex_id = f->tex_id != 0 ? f->tex_id : s->default_tex;
+  glm::vec2 cursor = {pos.x, pos.y + f->baseline_offset * 2};
+  while (*text) {
+    char c = *text++;
+    auto uvs_o = f->get_char_uvs(c);
+    if (uvs_o == std::nullopt) {
+      f->advance(c, cursor, {2, 2});
+      continue;
+    }
+    glm::vec4 uvs = *uvs_o;
+    glm::vec4 rect = f->get_char_rect(c, cursor, {2, 2});
+    f->advance(c, cursor, {2, 2});
+
+    draw_textured_rectangle(tex_id, {rect.x, rect.y}, {rect.z, rect.w},
+                            {uvs.x, uvs.y}, {uvs.z, uvs.w}, col);
+  }
 }

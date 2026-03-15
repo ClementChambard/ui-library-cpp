@@ -7,8 +7,10 @@ struct GPEventDispatcher {
   GPWidget *dragging = nullptr;
   GPWidget *pressing = nullptr;
 
+  glm::vec2 mouse_pos;
+
   void mouse_button_down(u32 button_id, glm::vec2 pos);
   void mouse_button_up(u32 button_id, glm::vec2 pos);
   void mouse_leave();
-  void mouse_move(Widget *root, glm::vec2 pos, glm::vec2 rel);
+  void mouse_move(glm::vec2 pos, glm::vec2 rel);
 };

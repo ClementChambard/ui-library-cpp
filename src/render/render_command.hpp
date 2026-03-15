@@ -41,8 +41,9 @@ struct RenderCommand_text {
   glm::vec2 pos{};
   char const *text = nullptr;
   Font *font = nullptr;
-  bool multiline = false;
+  Color col;
   f32 wrap_width = -1.f;
+  bool multiline = false;
 };
 
 union RenderCommand {
@@ -57,6 +58,9 @@ using CmdList = std::vector<RenderCommand>;
 
 void draw_triangle(CmdList &cmds, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3,
                    Color c);
+void draw_circle(CmdList &cmds, glm::vec2 center, f32 radius, Color c);
+void draw_circle_outline(CmdList &cmds, glm::vec2 center, f32 radius, Color c,
+                         f32 outline_size);
 void draw_rectangle(CmdList &cmds, glm::vec2 pos, glm::vec2 size, Color c);
 void draw_rectangle(CmdList &cmds, glm::vec2 pos, glm::vec2 size, Color c,
                     f32 corner_radius);
@@ -71,12 +75,12 @@ void draw_rectangle_outline(CmdList &cmds, glm::vec2 pos, glm::vec2 size,
                             f32 outline_size);
 void draw_set_scissor(CmdList &cmds, glm::vec2 pos, glm::vec2 size);
 void draw_disable_scissor(CmdList &cmds);
-void draw_text(CmdList &cmds, glm::vec2 pos, std::string const &text,
+void draw_text(CmdList &cmds, glm::vec2 pos, std::string const &text, Color col,
                Font *font = nullptr);
 void draw_text_multiline(CmdList &cmds, glm::vec2 pos, std::string const &text,
-                         Font *font = nullptr);
+                         Color col, Font *font = nullptr);
 void draw_text_wrap(CmdList &cmds, glm::vec2 pos, std::string const &text,
-                    f32 wrap_width, Font *font = nullptr);
+                    Color col, f32 wrap_width, Font *font = nullptr);
 void draw_text_multiline_wrap(CmdList &cmds, glm::vec2 pos,
-                              std::string const &text, f32 wrap_width,
-                              Font *font = nullptr);
+                              std::string const &text, Color col,
+                              f32 wrap_width, Font *font = nullptr);

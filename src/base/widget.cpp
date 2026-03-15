@@ -34,11 +34,29 @@ void Widget::render_at(glm::vec2 pos, CmdList &out_commands) const {
     return m_internal_widget->render_at(pos, out_commands);
 }
 
-void Widget::lay(glm::vec2 min_size, glm::vec2 max_size) {
+bool Widget::point_in_widget(glm::vec2 p) {
+  if (p.x < 0 || p.y < 0)
+    return false;
+  if (p.x > m_current_size.x || p.y > m_current_size.y)
+    return false;
+  return true;
+}
+
+void Widget::lay(LayContext ctx) {
   if (m_internal_widget)
-    return m_internal_widget->lay(min_size, max_size);
+    return m_internal_widget->lay(ctx);
 }
 
 struct GPWidget *Widget::get_hovered_gp(glm::vec2 pos) {
   return m_internal_widget ? m_internal_widget->get_hovered_gp(pos) : nullptr;
+}
+
+void Widget::calc_min_max_size() { set_min_max_size({0, 0}, {10000, 10000}); }
+
+void Widget::set_min_max_size(glm::vec2 min, glm::vec2 max) {
+  m_minimum_size = min;
+  m_maximum_size = max;
+  if (m_parent) {
+    m_parent->calc_min_max_size();
+  }
 }

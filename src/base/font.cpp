@@ -1,11 +1,35 @@
 #include "font.hpp"
+#include <fstream>
+#include <sstream>
 
 // TODO: ascii
 
+Font *Font::DEFAULT = nullptr;
+
 Font Font::load(std::string const &filename) {
-  // TODO:
-  (void)filename;
-  return {};
+  Font out;
+  std::ifstream f(filename);
+  std::string line;
+  u32 i = 0;
+  while (std::getline(f, line)) {
+    auto &g = out.ascii_glyphs[i];
+    if (line[0] == 'x') {
+      std::istringstream iss(line.substr(1));
+      g.no_visuals = true;
+      iss >> g.x_advance;
+    } else {
+      std::istringstream iss(line);
+      g.no_visuals = false;
+      iss >> g.x >> g.y >> g.tex_x >> g.tex_y >> g.w >> g.h >> g.x_advance;
+    }
+    i++;
+  }
+  out.tex_id = 0;
+  out.tex_h = 128;
+  out.tex_w = 512;
+  out.line_height = 16;
+  out.baseline_offset = 12;
+  return out;
 }
 
 glm::vec2 Font::calc_string_size(std::string s, bool accept_newline) {
@@ -67,4 +91,35 @@ glm::vec2 Font::calc_string_wrap(std::string s, f32 width_available) {
   // TODO:
   (void)s, (void)width_available;
   return {};
+}
+
+std::optional<glm::vec4> Font::get_char_uvs(char c) {
+  int cp = c;
+  if (!(cp >= 0 && cp <= 127))
+    return {};
+  auto &g = ascii_glyphs[u8(c)];
+  if (g.no_visuals)
+    return std::nullopt;
+  f32 u1 = f32(g.tex_x) / f32(tex_w);
+  f32 u2 = f32(g.tex_x + g.w) / f32(tex_w);
+  f32 v1 = f32(g.tex_y) / f32(tex_h);
+  f32 v2 = f32(g.tex_y + g.h) / f32(tex_h);
+  return {{u1, v1, u2, v2}};
+}
+
+glm::vec4 Font::get_char_rect(char c, glm::vec2 cursor, glm::vec2 scale) {
+  int cp = c;
+  if (!(cp >= 0 && cp <= 127))
+    return {};
+  auto &g = ascii_glyphs[u8(c)];
+  glm::vec2 p1 = cursor - glm::vec2(g.x, g.y) * scale;
+  return {p1, g.w * scale.x, g.h * scale.y};
+}
+
+void Font::advance(char c, glm::vec2 &cursor, glm::vec2 scale) {
+  int cp = c;
+  if (!(cp >= 0 && cp <= 127))
+    return;
+  auto &g = ascii_glyphs[u8(c)];
+  cursor.x += g.x_advance * scale.x;
 }

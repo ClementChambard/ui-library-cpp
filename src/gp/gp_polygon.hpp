@@ -7,10 +7,11 @@ struct PolygonGPWidget : GPWidget {
       : GPWidget(parent), m_points(points), m_color(color) {
     calculate_size();
     m_current_size = m_computed_size;
+    set_min_max_size(m_current_size, m_current_size);
   }
 
   virtual void render_at(glm::vec2 pos, CmdList &out_commands) const override;
-  virtual void lay(glm::vec2 min_size, glm::vec2 max_size) override;
+  virtual void lay(LayContext ctx) override;
   // better get_hovered_gp ??
 
   void calculate_size();

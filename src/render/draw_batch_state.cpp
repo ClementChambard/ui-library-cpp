@@ -1,6 +1,7 @@
 #include "draw_batch_state.hpp"
 #include <GL/glew.h>
 #include <iostream>
+#include "../ven/stb_image.h"
 
 Shader::~Shader() { glDeleteProgram(program_id); }
 
@@ -25,6 +26,26 @@ void main() {
     output_color = frag_col * texture(u_texture, frag_uvs);
 })shdr";
 
+u32 make_texture(char const *filename, bool smooth = false) {
+  u32 out;
+  glCreateTextures(GL_TEXTURE_2D, 1, &out);
+
+  i32 width, height, n_channels;
+  auto buf = stbi_load(filename, &width, &height, &n_channels, 4);
+
+  glTextureStorage2D(out, 1, GL_RGBA8, width, height);
+  glTextureSubImage2D(out, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
+                      buf);
+  stbi_image_free(buf);
+
+  if (!smooth) {
+    glTextureParameteri(out, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(out, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  }
+
+  return out;
+}
+
 DrawBatchState::DrawBatchState() {
   glCreateBuffers(1, &vbo_id);
   glCreateBuffers(1, &ibo_id);
@@ -47,11 +68,7 @@ DrawBatchState::DrawBatchState() {
 
   // TODO: texture should be loaded with default font
 
-  glCreateTextures(GL_TEXTURE_2D, 1, &default_tex);
-  glTextureStorage2D(default_tex, 1, GL_RGBA8, 1, 1);
-  u8 data[] = {255, 255, 255, 255};
-  glTextureSubImage2D(default_tex, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE,
-                      data);
+  default_tex = make_texture("res/base_tex_imgui.png");
 }
 
 DrawBatchState::~DrawBatchState() {

@@ -12,9 +12,9 @@ void CircleGPWidget::render_at(glm::vec2 pos, CmdList &out_commands) const {
   }
 }
 
-void CircleGPWidget::lay(glm::vec2 min_size, glm::vec2 max_size) {
-  f32 min_diameter = std::min(min_size.x, min_size.y);
-  f32 max_diameter = std::min(max_size.x, max_size.y);
+void CircleGPWidget::lay(LayContext ctx) {
+  f32 min_diameter = std::min(ctx.min_size.x, ctx.min_size.y);
+  f32 max_diameter = std::min(ctx.max_size.x, ctx.max_size.y);
   assert(min_diameter <= max_diameter);
   f32 diameter = glm::clamp(m_radius * 2, min_diameter, max_diameter);
   m_current_size = {diameter, diameter};

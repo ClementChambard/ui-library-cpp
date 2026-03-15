@@ -40,56 +40,100 @@ void arc_inner_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
   }
 }
 
-u32 round_rectangle_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
-                             glm::vec2 size, Color col, f32 radius,
-                             u32 &o_first_index, u32 &o_last_index,
-                             u32 n_point_needed = 0) {
-  if (size.x < radius * 2)
-    radius = size.x / 2;
-  if (size.y < radius * 2)
-    radius = size.y / 2;
+f32 calc_point_needed(f32 radius) {
+  if (radius == 0)
+    return 0;
+  // TODO: cache result to avoid too much trig ?
+  return std::numbers::pi / (4.0f * std::acos(1 - 0.33 / radius));
+}
+
+glm::vec4 calc_point_needed(glm::vec4 radius) {
+  return {
+      calc_point_needed(radius.x),
+      calc_point_needed(radius.y),
+      calc_point_needed(radius.z),
+      calc_point_needed(radius.w),
+  };
+}
+
+void round_rectangle_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
+                              glm::vec2 size, Color col, glm::vec4 radius,
+                              u32 &o_first_index, u32 &o_last_index,
+                              glm::vec4 n_point_needed) {
   o_first_index = vertices.size();
 
-  f32 x1 = pos.x + radius;
-  f32 x2 = pos.x + size.x - radius;
-  f32 y1 = pos.y + radius;
-  f32 y2 = pos.y + size.y - radius;
-  if (n_point_needed == 0)
-    n_point_needed = std::numbers::pi / (4.0f * std::acos(1 - 0.33 / radius));
-  bool x_degenerate = x1 == x2;
-  bool y_degenerate = y1 == y2;
+  glm::vec2 tl_inner = pos + glm::vec2(radius.x, radius.x);
+  glm::vec2 tr_inner = pos + glm::vec2(size.x - radius.y, radius.y);
+  glm::vec2 br_inner = pos + size - glm::vec2(radius.z, radius.z);
+  glm::vec2 bl_inner = pos + glm::vec2(radius.w, size.y - radius.w);
 
-  u32 n_vertex = n_point_needed * 4 + 4;
-  if (x_degenerate)
-    n_vertex += 2;
-  if (y_degenerate)
-    n_vertex += 2;
+  // TODO: move these points and change radius in case of them being in the
+  // wrong place if (size.x < radius.x * 2)
+  //   radius.x = size.x / 2;
+  // if (size.y < radius.x * 2)
+  //   radius.x = size.y / 2;
+
+  bool l_degenerate = tl_inner.y == bl_inner.y;
+  bool t_degenerate = tl_inner.x == tr_inner.x;
+  bool r_degenerate = tr_inner.y == br_inner.y;
+  bool b_degenerate = bl_inner.x == br_inner.x;
+
+  u32 n_vertex = n_point_needed.x + n_point_needed.y + n_point_needed.z +
+                 n_point_needed.w + 4;
+  if (l_degenerate)
+    n_vertex++;
+  if (t_degenerate)
+    n_vertex++;
+  if (r_degenerate)
+    n_vertex++;
+  if (b_degenerate)
+    n_vertex++;
 
   vertices.reserve(n_vertex);
 
-  vertices.push_back({{pos.x, y1}, UV0, col});
-  arc_inner_vertices(vertices, {x1, y1}, col, n_point_needed, std::numbers::pi,
-                     std::numbers::pi / 2.f, radius);
-  vertices.push_back({{x1, pos.y}, UV0, col});
-  if (!x_degenerate)
-    vertices.push_back({{x2, pos.y}, UV0, col});
-  arc_inner_vertices(vertices, {x2, y1}, col, n_point_needed,
-                     std::numbers::pi / 2.f, std::numbers::pi / 2.f, radius);
-  vertices.push_back({{pos.x + size.x, y1}, UV0, col});
-  if (!y_degenerate)
-    vertices.push_back({{pos.x + size.x, y2}, UV0, col});
-  arc_inner_vertices(vertices, {x2, y2}, col, n_point_needed, 0,
-                     std::numbers::pi / 2.f, radius);
-  vertices.push_back({{x2, pos.y + size.y}, UV0, col});
-  if (!x_degenerate)
-    vertices.push_back({{x1, pos.y + size.y}, UV0, col});
-  arc_inner_vertices(vertices, {x1, y2}, col, n_point_needed,
-                     -std::numbers::pi / 2.f, std::numbers::pi / 2.f, radius);
-  if (!y_degenerate)
-    vertices.push_back({{pos.x, y2}, UV0, col});
+  if (radius.x != 0) {
+    vertices.push_back({{pos.x, tl_inner.y}, UV0, col});
+    arc_inner_vertices(vertices, tl_inner, col, n_point_needed.x,
+                       std::numbers::pi, std::numbers::pi / 2.f, radius.x);
+    vertices.push_back({{tl_inner.x, pos.y}, UV0, col});
+  } else {
+    vertices.push_back({pos, UV0, col});
+  }
+
+  if (radius.y != 0) {
+    if (!t_degenerate)
+      vertices.push_back({{tr_inner.x, pos.y}, UV0, col});
+    arc_inner_vertices(vertices, tr_inner, col, n_point_needed.y,
+                       std::numbers::pi / 2.f, std::numbers::pi / 2.f,
+                       radius.y);
+    vertices.push_back({{pos.x + size.x, tr_inner.y}, UV0, col});
+  } else {
+    vertices.push_back({{pos.x + size.x, pos.y}, UV0, col});
+  }
+
+  if (radius.z != 0) {
+    if (!r_degenerate)
+      vertices.push_back({{pos.x + size.x, br_inner.y}, UV0, col});
+    arc_inner_vertices(vertices, br_inner, col, n_point_needed.z, 0,
+                       std::numbers::pi / 2.f, radius.z);
+    vertices.push_back({{br_inner.x, pos.y + size.y}, UV0, col});
+  } else {
+    vertices.push_back({pos + size, UV0, col});
+  }
+
+  if (radius.w != 0) {
+    if (!b_degenerate)
+      vertices.push_back({{bl_inner.x, pos.y + size.y}, UV0, col});
+    arc_inner_vertices(vertices, bl_inner, col, n_point_needed.w,
+                       -std::numbers::pi / 2.f, std::numbers::pi / 2.f,
+                       radius.w);
+    if (!l_degenerate)
+      vertices.push_back({{pos.x, bl_inner.y}, UV0, col});
+  } else {
+    vertices.push_back({{pos.x, pos.y + size.y}, UV0, col});
+  }
 
   o_last_index = vertices.size();
-  return n_point_needed;
 }
 
 void concave_polygon_triangle_fan(std::vector<u16> &indices, u32 first_index,
@@ -137,20 +181,34 @@ void link_lines_strip(std::vector<u16> &indices, u32 first_index_1,
 
 void DrawBatch::draw_round_rectangle(glm::vec2 pos, glm::vec2 size, Color c,
                                      f32 radius) {
+  draw_round_rectangle(pos, size, c, {radius, radius, radius, radius});
+}
+
+void DrawBatch::draw_round_rectangle(glm::vec2 pos, glm::vec2 size, Color c,
+                                     glm::vec4 radius) {
   auto s = static_cast<DrawBatchState *>(state);
   if (s->cur_tex != s->default_tex) {
     submit();
     s->use_texture(s->default_tex);
   }
   u32 first_index, last_index;
+
+  auto points_needed = calc_point_needed(radius);
   round_rectangle_vertices(s->vertices, pos, size, c, radius, first_index,
-                           last_index);
+                           last_index, points_needed);
   concave_polygon_triangle_fan(s->indices, first_index, last_index);
 }
 
 void DrawBatch::draw_round_rectangle_outline(glm::vec2 pos, glm::vec2 size,
                                              Color c, f32 outline_size,
                                              f32 radius) {
+  draw_round_rectangle_outline(pos, size, c, outline_size,
+                               {radius, radius, radius, radius});
+}
+
+void DrawBatch::draw_round_rectangle_outline(glm::vec2 pos, glm::vec2 size,
+                                             Color c, f32 outline_size,
+                                             glm::vec4 radius) {
   if (size.x < outline_size * 2 || size.y < outline_size * 2)
     return draw_round_rectangle(pos, size, c, radius);
   auto s = static_cast<DrawBatchState *>(state);
@@ -160,12 +218,14 @@ void DrawBatch::draw_round_rectangle_outline(glm::vec2 pos, glm::vec2 size,
   }
   u32 first_index_out, last_index_out;
   u32 first_index_in, last_index_in;
-  u32 n_point = round_rectangle_vertices(s->vertices, pos, size, c, radius,
-                                         first_index_out, last_index_out);
+
+  auto points_needed = calc_point_needed(radius);
+  round_rectangle_vertices(s->vertices, pos, size, c, radius, first_index_out,
+                           last_index_out, points_needed);
   round_rectangle_vertices(
       s->vertices, pos + glm::vec2(outline_size, outline_size),
       size - 2.f * glm::vec2(outline_size, outline_size), c,
-      radius - outline_size, first_index_in, last_index_in, n_point);
+      radius - outline_size, first_index_in, last_index_in, points_needed);
   u32 count = last_index_out - first_index_out;
   assert(count == last_index_in - first_index_in);
   link_lines_strip(s->indices, first_index_out, first_index_in, count, true);
@@ -178,6 +238,9 @@ void DrawBatch::draw_textured_rectangle(u32 tex, glm::vec2 pos, glm::vec2 size,
     submit();
     s->use_texture(tex);
   }
+  // std::cout << pos.x << "," << pos.y << " " << size.x << "x" << size.y << "
+  // =   "; std::cout << uv1.x << "," << uv1.y << " " << uv2.x << "," << uv2.y
+  // << '\n';
   u32 tl = s->vertex({pos, uv1, c});
   u32 tr = s->vertex({{pos.x + size.x, pos.y}, {uv2.x, uv1.y}, c});
   u32 bl = s->vertex({{pos.x, pos.y + size.y}, {uv1.x, uv2.y}, c});

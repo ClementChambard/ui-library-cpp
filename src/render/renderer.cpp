@@ -30,10 +30,13 @@ void Renderer::render() {
       b->draw_rectangle_outline(c.rect.pos, c.rect.size, c.rect.col,
                                 c.rect.outline_size);
     } else if (c.kind == RenderCommand_ROUND_RECT) {
-      b->draw_round_rectangle(c.rect.pos, c.rect.size, c.rect.col, c.rect.r_tl);
+      b->draw_round_rectangle(
+          c.rect.pos, c.rect.size, c.rect.col,
+          {c.rect.r_tl, c.rect.r_tr, c.rect.r_br, c.rect.r_bl});
     } else if (c.kind == RenderCommand_ROUND_RECT_BORDER) {
-      b->draw_round_rectangle_outline(c.rect.pos, c.rect.size, c.rect.col,
-                                      c.rect.outline_size, c.rect.r_tl);
+      b->draw_round_rectangle_outline(
+          c.rect.pos, c.rect.size, c.rect.col, c.rect.outline_size,
+          {c.rect.r_tl, c.rect.r_tr, c.rect.r_br, c.rect.r_bl});
     } else if (c.kind == RenderCommand_TRIANGLE) {
       b->draw_triangle(c.tri.p1, c.tri.p2, c.tri.p3, c.tri.col);
     } else if (c.kind == RenderCommand_SCISSOR) {
@@ -46,6 +49,16 @@ void Renderer::render() {
       } else {
         glDisable(GL_SCISSOR_TEST);
       }
+    } else if (c.kind == RenderCommand_TEXT) {
+      auto font = c.text.font;
+      if (font == nullptr)
+        font = Font::DEFAULT;
+      if (c.text.multiline) {
+        // TODO:
+      } else {
+        b->draw_text(c.text.pos, font, c.text.text, c.text.col);
+      }
+      std::free((void *)c.text.text);
     }
   }
   b->submit();
