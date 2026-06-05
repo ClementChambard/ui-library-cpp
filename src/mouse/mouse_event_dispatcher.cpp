@@ -1,7 +1,9 @@
-#include "gp_event_dispatcher.hpp"
+#include "mouse_event_dispatcher.hpp"
 #include "../window/window_manager.hpp"
 
-void GPEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos) {
+using namespace ui;
+
+void MouseEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos) {
   if (cur) {
     MouseButtonEvent mbe(true, button_id, pos);
     cur->dispatch_event(&mbe);
@@ -9,26 +11,26 @@ void GPEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos) {
   }
 }
 
-void GPEventDispatcher::mouse_button_up(u32 button_id, glm::vec2 pos) {
+void MouseEventDispatcher::mouse_button_up(u32 button_id, glm::vec2 pos) {
   if (cur) {
     MouseButtonEvent mbe(false, button_id, pos);
     cur->dispatch_event(&mbe);
   }
   if (dragging) {
-    Event e(MOUSE_DRAG_END_EVENT);
+    MouseEvent e(event::MOUSE_DRAG_END);
     dragging->dispatch_event(&e);
   }
   pressing = nullptr;
   dragging = nullptr;
 }
 
-void GPEventDispatcher::mouse_leave() {
+void MouseEventDispatcher::mouse_leave() {
   if (cur) {
-    Event e(MOUSE_LEAVE_EVENT);
+    MouseEvent e(event::MOUSE_LEAVE);
     cur->dispatch_event(&e);
   }
   if (dragging) {
-    Event e(MOUSE_DRAG_END_EVENT);
+    MouseEvent e(event::MOUSE_DRAG_END);
     dragging->dispatch_event(&e);
   }
   cur = nullptr;
@@ -36,27 +38,27 @@ void GPEventDispatcher::mouse_leave() {
   pressing = nullptr;
 }
 
-void GPEventDispatcher::mouse_move(glm::vec2 pos, glm::vec2 rel) {
+void MouseEventDispatcher::mouse_move(glm::vec2 pos, glm::vec2 rel) {
   mouse_pos = pos;
   if (pressing && !dragging) {
     dragging = pressing;
-    Event e(MOUSE_DRAG_START_EVENT);
+    MouseEvent e(event::MOUSE_DRAG_START);
     dragging->dispatch_event(&e);
   }
   if (dragging && rel != glm::vec2{0, 0}) {
     MouseDragEvent evt(rel);
     dragging->dispatch_event(&evt);
   }
-  GPWidget *gp = WindowManager::INSTANCE->get_hovered_gp(pos);
-  if (gp == cur)
+  MouseArea *ma = WindowManager::INSTANCE->get_hovered_ma(pos);
+  if (ma == cur)
     return;
   if (cur) {
-    Event e(MOUSE_LEAVE_EVENT);
+    MouseEvent e(event::MOUSE_LEAVE);
     cur->dispatch_event(&e);
   }
-  if (gp) {
-    Event e(MOUSE_ENTER_EVENT);
-    gp->dispatch_event(&e);
+  if (ma) {
+    MouseEvent e(event::MOUSE_ENTER);
+    ma->dispatch_event(&e);
   }
-  cur = gp;
+  cur = ma;
 }

@@ -2,6 +2,8 @@
 #include "draw_batch.hpp"
 #include <GL/glew.h>
 
+using namespace ui::render;
+
 void Renderer::init() {
   glewInit();
   // glEnable(GL_DEPTH_TEST);
@@ -20,7 +22,11 @@ void Renderer::update_size(glm::vec2 s) {
 }
 
 void Renderer::render() {
-  glClearColor(1, 1, 1, 1);
+  if (ColorScheme::current_kind() == ColorScheme::DARK) {
+    glClearColor(0.1, 0.1, 0.1, 1);
+  } else {
+    glClearColor(1, 1, 1, 1);
+  }
   glClearDepth(1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   for (auto const &c : cmd_list) {
@@ -37,6 +43,10 @@ void Renderer::render() {
       b->draw_round_rectangle_outline(
           c.rect.pos, c.rect.size, c.rect.col, c.rect.outline_size,
           {c.rect.r_tl, c.rect.r_tr, c.rect.r_br, c.rect.r_bl});
+    } else if (c.kind == RenderCommand_BOX_SHADOW) {
+      b->draw_box_shadow(c.rect.pos, c.rect.size, c.rect.col,
+                         {c.rect.r_tl, c.rect.r_tr, c.rect.r_br, c.rect.r_bl},
+                         c.rect.outline_size);
     } else if (c.kind == RenderCommand_TRIANGLE) {
       b->draw_triangle(c.tri.p1, c.tri.p2, c.tri.p3, c.tri.col);
     } else if (c.kind == RenderCommand_SCISSOR) {

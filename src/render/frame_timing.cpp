@@ -1,17 +1,19 @@
 #include "frame_timing.hpp"
 #include <ctime>
 
+using namespace ui::render;
+
 static constexpr f64 TARGET_FRAME_TIME = 1.0 / FPS;
 
 static f64 frame_start_time;
 
-void frame_timer_start() {
+void ui::render::frame_timer_start() {
   timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   frame_start_time = now.tv_sec + now.tv_nsec * 0.000000001;
 }
 
-void frame_timer_end() {
+void ui::render::frame_timer_end() {
   timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   f64 frame_end_time = now.tv_sec + now.tv_nsec * 0.000000001;

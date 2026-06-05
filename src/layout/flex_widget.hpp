@@ -1,6 +1,8 @@
 #pragma once
 #include "../base/collection_widget.hpp"
 
+namespace ui {
+
 namespace Flex {
 enum Direction {
   HORIZONTAL,
@@ -40,3 +42,5 @@ struct FlexWidget : CollectionWidget<Flex::ChildHolder> {
       m_padding_bottom = 0.f;
   f32 m_gap = 0.f;
 };
+
+} // namespace ui

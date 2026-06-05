@@ -1,21 +1,14 @@
 #include "dialog.hpp"
 #include "../control/standard_buttons.hpp"
-#include "../gp/gp_rect.hpp"
 #include "window_manager.hpp"
 #include <glm/fwd.hpp>
 #include <iostream>
 
+using namespace ui;
+
 static constexpr f32 DIALOG_PADDING = 11.f;
 static constexpr f32 DIALOG_SIZE_TOPBAR = 32.f;
 static constexpr f32 DIALOG_SIZE_BOTBAR = 60.f;
-
-static constexpr Color DIALOG_COLOR_OUTLINE = {209, 209, 209, 255};
-static constexpr Color DIALOG_COLOR_SEPARATOR = {226, 228, 227, 255};
-static constexpr Color DIALOG_COLOR_TOPBAR = c_white;
-static constexpr Color DIALOG_COLOR_BG = {244, 245, 246, 255};
-static constexpr Color DIALOG_COLOR_BOTBAR = {241, 241, 241, 255};
-
-static constexpr Color TEXT_COLOR = {61, 61, 61, 255};
 
 Dialog::~Dialog() { delete m_standard_buttons; }
 
@@ -27,7 +20,7 @@ Dialog::Dialog() : Window() {
   m_standard_buttons = new StandardButtons(this);
 
   add_event_listener<StandardButtonClickEvent>(
-      STANDARD_BUTTON_CLICK_EVENT, m_standard_buttons,
+      event::STANDARD_BUTTON_CLICK, m_standard_buttons,
       [](StandardButtonClickEvent *e, Dialog *d) {
         d->on_standard_button_click(e->std_id);
       });
@@ -45,6 +38,8 @@ void Dialog::set_modal(bool v) {
 void Dialog::set_standard_buttons(u32 v) { m_standard_buttons->set_mask(v); }
 
 void Dialog::render_at(glm::vec2 pos, CmdList &out_commands) const {
+  auto const &color_scheme = ColorScheme::current();
+  auto const &colors = color_scheme.dialog;
   pos += m_pos;
 
   if (m_is_modal) {
@@ -54,32 +49,32 @@ void Dialog::render_at(glm::vec2 pos, CmdList &out_commands) const {
   // drop shadow...
 
   draw_rectangle(out_commands, pos,
-                 glm::vec2(m_current_size.x, DIALOG_SIZE_TOPBAR),
-                 DIALOG_COLOR_TOPBAR, 6, 6, 0, 0);
+                 glm::vec2(m_current_size.x, DIALOG_SIZE_TOPBAR), colors.bg1, 6,
+                 6, 0, 0);
 
   if (m_title != "") {
     glm::vec2 t_pos = pos + glm::vec2(8, 0);
-    draw_text(out_commands, t_pos, m_title, TEXT_COLOR);
+    draw_text(out_commands, t_pos, m_title, colors.fg);
   }
 
   draw_rectangle(out_commands,
                  pos + glm::vec2(0, m_current_size.y - DIALOG_SIZE_BOTBAR + 1),
                  glm::vec2(m_current_size.x, DIALOG_SIZE_BOTBAR - 1),
-                 DIALOG_COLOR_BOTBAR, 0, 0, 6, 6);
+                 color_scheme.secondary.bg.base, 0, 0, 6, 6);
 
   draw_rectangle(out_commands, pos + glm::vec2(0, DIALOG_SIZE_TOPBAR + 1),
                  m_current_size -
                      glm::vec2(0, DIALOG_SIZE_TOPBAR + DIALOG_SIZE_BOTBAR + 1),
-                 DIALOG_COLOR_BG);
+                 m_is_modal ? colors.bg1 : colors.bg2);
 
-  draw_rectangle_outline(out_commands, pos, m_current_size,
-                         DIALOG_COLOR_OUTLINE, 6, 1);
+  draw_rectangle_outline(out_commands, pos, m_current_size, colors.border, 6,
+                         1);
 
   draw_rectangle(out_commands, pos + glm::vec2(0, DIALOG_SIZE_TOPBAR),
-                 {m_current_size.x, 1}, DIALOG_COLOR_SEPARATOR);
+                 {m_current_size.x, 1}, colors.separator);
   draw_rectangle(out_commands,
                  pos + glm::vec2(0, m_current_size.y - DIALOG_SIZE_BOTBAR),
-                 {m_current_size.x, 1}, DIALOG_COLOR_SEPARATOR);
+                 {m_current_size.x, 1}, colors.separator);
 
   m_standard_buttons->render_at(
       pos + glm::vec2(DIALOG_PADDING,
@@ -120,18 +115,18 @@ void Dialog::calc_min_max_size() {
   recalc_layout({});
 }
 
-GPWidget *Dialog::get_hovered_gp(glm::vec2 pos) {
+MouseArea *Dialog::get_hovered_ma(glm::vec2 pos) {
 
-  auto gp = m_standard_buttons->get_hovered_gp(
+  auto ma = m_standard_buttons->get_hovered_ma(
       pos - m_pos -
       glm::vec2(DIALOG_PADDING,
                 DIALOG_PADDING + m_current_size.y - DIALOG_SIZE_BOTBAR));
-  if (gp)
-    return gp;
-  gp = Window::get_hovered_gp(pos);
-  if (m_is_modal && gp == nullptr)
-    gp = m_event_fallback;
-  return gp;
+  if (ma)
+    return ma;
+  ma = Window::get_hovered_ma(pos);
+  if (m_is_modal && ma == nullptr)
+    ma = &m_event_fallback;
+  return ma;
 }
 
 void Dialog::on_standard_button_click(u32 std_id) {

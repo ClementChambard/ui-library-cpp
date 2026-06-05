@@ -1,5 +1,6 @@
 #include "flex_widget.hpp"
 
+using namespace ui;
 using namespace Flex;
 
 void FlexWidget::render_at(glm::vec2 pos, CmdList &out_commands) const {

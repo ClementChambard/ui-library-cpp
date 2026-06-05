@@ -1,15 +1,19 @@
 #pragma once
 
-#include "../gp/gp_event_dispatcher.hpp"
+#include "../mouse/mouse_event_dispatcher.hpp"
 #include "../render/main_window.hpp"
 #include "window.hpp"
 
+union SDL_Event;
+
+namespace ui {
+
 struct WindowManager {
-  GPWidget *get_hovered_gp(glm::vec2 pos);
+  MouseArea *get_hovered_ma(glm::vec2 pos);
   void register_window(Window *w);
   void activate_window(Window *w);
   void render_all(CmdList &cmds);
-  void handle_event(union SDL_Event const &e);
+  void handle_event(SDL_Event const &e);
 
   WindowManager();
   ~WindowManager();
@@ -21,8 +25,10 @@ struct WindowManager {
 
   struct ControlWidget *m_current_focus = nullptr;
 
-  MainWindow m_main_window;
-  GPEventDispatcher m_gped;
+  render::MainWindow m_main_window;
+  MouseEventDispatcher m_med;
   std::vector<Window *> m_windows;
   static WindowManager *INSTANCE;
 };
+
+} // namespace ui

@@ -1,6 +1,8 @@
 #include "control_widget.hpp"
 #include "../window/window.hpp"
 
+using namespace ui;
+
 ControlWidget::ControlWidget(Widget *parent) : Widget(parent) {}
 
 ControlWidget::~ControlWidget() {

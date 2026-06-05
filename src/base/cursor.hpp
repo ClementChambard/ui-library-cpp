@@ -1,5 +1,7 @@
 #pragma once
 
+namespace ui {
+
 struct Cursor {
   enum Kind {
     ARROW,
@@ -22,3 +24,5 @@ struct Cursor {
   static void set(Kind k);
   static void reset() { set(ARROW); }
 };
+
+} // namespace ui

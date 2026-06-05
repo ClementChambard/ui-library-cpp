@@ -5,39 +5,18 @@
 #include <glm/glm.hpp>
 #include <type_traits>
 
-static constexpr u32 MOUSE_ENTER_EVENT = 0;
-static constexpr u32 MOUSE_LEAVE_EVENT = 1;
-static constexpr u32 MOUSE_PRESS_EVENT = 2;
-static constexpr u32 MOUSE_RELEASE_EVENT = 3;
-static constexpr u32 MOUSE_DRAG_START_EVENT = 4;
-static constexpr u32 MOUSE_DRAG_END_EVENT = 5;
-static constexpr u32 MOUSE_DRAG_EVENT = 6;
+#include "event_kinds.hpp"
 
-static constexpr u32 MB_LEFT = 1;
+namespace ui {
 
 struct Widget;
 
 struct Event {
-  u32 id = 0;
+  event::Kind id = 0;
   Widget *origin = nullptr;
   bool consumed = false;
 
   Event(u32 id) : id(id) {}
-};
-
-struct MouseButtonEvent : Event {
-  u32 button_id = 0;
-  glm::vec2 pos{};
-
-  MouseButtonEvent(bool press, u32 button_id, glm::vec2 pos)
-      : Event(press ? MOUSE_PRESS_EVENT : MOUSE_RELEASE_EVENT),
-        button_id(button_id), pos(pos) {}
-};
-
-struct MouseDragEvent : Event {
-  glm::vec2 pos;
-
-  MouseDragEvent(glm::vec2 pos) : Event(MOUSE_DRAG_EVENT), pos(pos) {}
 };
 
 template <typename T>
@@ -85,3 +64,5 @@ struct MethodEventListener : EventListenerBase {
     return (static_cast<W *>(w)->*fn)(static_cast<E *>(e));
   }
 };
+
+} // namespace ui

@@ -1,5 +1,7 @@
 #include "standard_buttons.hpp"
 
+using namespace ui;
+
 static constexpr f32 STANDARD_BUTTONS_GAP = 10;
 static constexpr f32 STANDARD_BUTTONS_MIN_WIDTH = 100;
 
@@ -34,7 +36,7 @@ void StandardButtons::lay(LayContext ctx) {
   m_current_size = ctx.min_size;
 }
 
-GPWidget *StandardButtons::get_hovered_gp(glm::vec2 pos) {
+struct MouseArea *StandardButtons::get_hovered_ma(glm::vec2 pos) {
   if (!point_in_widget(pos))
     return nullptr;
   pos = pos - glm::vec2(m_current_size.x, 0);
@@ -43,9 +45,9 @@ GPWidget *StandardButtons::get_hovered_gp(glm::vec2 pos) {
       continue;
     auto b = m_standard_buttons[i];
     pos.x += b->m_current_size.x;
-    auto gp = b->get_hovered_gp(pos);
-    if (gp != nullptr)
-      return gp;
+    auto ma = b->get_hovered_ma(pos);
+    if (ma != nullptr)
+      return ma;
     pos.x += STANDARD_BUTTONS_GAP;
   }
   return nullptr;
@@ -74,29 +76,34 @@ void StandardButtons::set_mask(u32 v) {
   calc_min_max_size();
 }
 
-Button *create_button(u32 i) {
+static Button *create_button(u32 i) {
   std::string text;
   if (i == 0)
-    text = "Ok";
-  if (i == 1)
     text = "Cancel";
+  if (i == 1)
+    text = "Ok";
   auto btn = new Button(nullptr);
   btn->set_text(text);
   return btn;
 }
 
 void StandardButtons::create_buttons() {
+  Button *primary_button = nullptr;
   for (u32 i = 0; i < BUTTON_COUNT; i++) {
     if (((m_standard_button_mask >> i) & 1) == 0)
       continue;
-    if (m_standard_buttons[i] != nullptr)
-      continue;
-    m_standard_buttons[i] = create_button(i);
-    m_standard_buttons[i]->m_parent = this;
-    add_event_listener(CLICK_EVENT, m_standard_buttons[i],
-                       [i](Event *, StandardButtons *b) {
-                         StandardButtonClickEvent e(1 << i);
-                         b->dispatch_event(&e);
-                       });
+    if (m_standard_buttons[i] == nullptr) {
+      m_standard_buttons[i] = create_button(i);
+      m_standard_buttons[i]->m_parent = this;
+      add_event_listener(event::BUTTON_CLICK, m_standard_buttons[i],
+                         [i](Event *, StandardButtons *b) {
+                           StandardButtonClickEvent e(1 << i);
+                           b->dispatch_event(&e);
+                         });
+    }
+    m_standard_buttons[i]->m_kind = Button::SECONDARY;
+    primary_button = m_standard_buttons[i];
   }
+  if (primary_button)
+    primary_button->m_kind = Button::PRIMARY;
 }

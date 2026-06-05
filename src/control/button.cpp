@@ -1,18 +1,12 @@
 #include "button.hpp"
 #include "../base/cursor.hpp"
-#include "../gp/gp_rect.hpp"
+
+using namespace ui;
 
 static constexpr f32 BUTTON_ROUNDING = 4.f;
 static constexpr f32 BUTTON_OUTLINE_WIDTH = 1;
 static constexpr f32 BUTTON_PADDING_X = 14;
 static constexpr f32 BUTTON_PADDING_y = 2;
-static constexpr Color BUTTON_COLOR_BG = {241, 241, 241, 255};
-static constexpr Color BUTTON_COLOR_BG_HOVER = {226, 226, 226, 255};
-static constexpr Color BUTTON_COLOR_BG_CLICK = {209, 212, 212, 255};
-static constexpr Color BUTTON_COLOR_OUTLINE = {180, 182, 186, 255};
-static constexpr Color BUTTON_COLOR_OUTLINE_HOVER = {119, 121, 124, 255};
-static constexpr Color BUTTON_COLOR_OUTLINE_CLICK = {61, 61, 61, 255};
-static constexpr Color BUTTON_COLOR_TEXT = {61, 61, 61, 255};
 static constexpr glm::vec2 BUTTON_MIN_SIZE = {32, 32};
 
 glm::vec2 get_size(Button const &b) {
@@ -26,21 +20,19 @@ glm::vec2 get_size(Button const &b) {
 }
 
 Button::Button(Widget *parent) : ControlWidget(parent) {
-  m_pick_rect = RectGPWidget::make_event_handle(this, {200, 80});
+  m_pick_rect.set_size({200, 80});
   m_font = Font::DEFAULT;
 
-  add_event_listener(MOUSE_ENTER_EVENT, m_pick_rect, &Button::on_enter);
-  add_event_listener(MOUSE_LEAVE_EVENT, m_pick_rect, &Button::on_leave);
-  add_event_listener<MouseButtonEvent>(MOUSE_PRESS_EVENT, m_pick_rect,
+  add_event_listener(event::MOUSE_ENTER, this, &Button::on_enter);
+  add_event_listener(event::MOUSE_LEAVE, this, &Button::on_leave);
+  add_event_listener<MouseButtonEvent>(event::MOUSE_PRESS, this,
                                        &Button::on_press);
-  add_event_listener<MouseButtonEvent>(MOUSE_RELEASE_EVENT, m_pick_rect,
+  add_event_listener<MouseButtonEvent>(event::MOUSE_RELEASE, this,
                                        &Button::on_release);
-  add_event_listener(MOUSE_DRAG_END_EVENT, m_pick_rect, &Button::on_drag_end);
+  add_event_listener(event::MOUSE_DRAG_END, this, &Button::on_drag_end);
 
   set_min_max_size(get_size(*this), {10000, 10000});
 }
-
-Button::~Button() { delete m_pick_rect; }
 
 void Button::on_drag_end(Event *) { m_pressing = false; }
 
@@ -68,7 +60,7 @@ void Button::on_release(MouseButtonEvent *e) {
   if (!m_pressing)
     return;
   m_pressing = false;
-  auto ev = Event(CLICK_EVENT);
+  auto ev = Event(event::BUTTON_CLICK);
   dispatch_event(&ev);
 }
 
@@ -81,21 +73,25 @@ void Button::set_text(std::string const &t) {
 void Button::render_at(glm::vec2 pos, CmdList &out_commands) const {
   glm::vec2 size = m_current_size;
 
-  Color bg_color = BUTTON_COLOR_BG;
-  Color outline_color = BUTTON_COLOR_OUTLINE;
-  Color text_color = BUTTON_COLOR_TEXT;
+  auto const &col_set = m_kind == PRIMARY ? ColorScheme::current().primary
+                                          : ColorScheme::current().secondary;
+  Color bg_color = col_set.bg.base;
+  Color outline_color = col_set.border.base;
+  Color text_color = col_set.fg.base;
   if (is_disabled()) {
     bg_color.a = 128;
     outline_color.a = 128;
     text_color.a = 128;
   } else {
     if (m_hovering) {
-      bg_color = BUTTON_COLOR_BG_HOVER;
-      outline_color = BUTTON_COLOR_OUTLINE_HOVER;
+      bg_color = col_set.bg.hover;
+      outline_color = col_set.border.hover;
+      text_color = col_set.fg.hover;
     }
     if (m_pressing) {
-      bg_color = BUTTON_COLOR_BG_CLICK;
-      outline_color = BUTTON_COLOR_OUTLINE_CLICK;
+      bg_color = col_set.bg.press;
+      outline_color = col_set.border.press;
+      text_color = col_set.fg.press;
     }
   }
   draw_rectangle(out_commands, pos, size, bg_color, BUTTON_ROUNDING);
@@ -113,7 +109,7 @@ void Button::render_at(glm::vec2 pos, CmdList &out_commands) const {
 void Button::on_key(Key k) {
   if (k != Key::RETURN)
     return;
-  auto ev = Event(CLICK_EVENT);
+  auto ev = Event(event::BUTTON_CLICK);
   dispatch_event(&ev);
 }
 
@@ -123,9 +119,9 @@ void Button::lay(LayContext ctx) {
 
   m_current_size = glm::max(wanted_size, ctx.min_size);
 
-  m_pick_rect->m_current_size = m_current_size;
+  m_pick_rect.set_size(m_current_size);
 }
 
-GPWidget *Button::get_hovered_gp(glm::vec2 pos) {
-  return m_pick_rect->get_hovered_gp(pos);
+MouseArea *Button::get_hovered_ma(glm::vec2 pos) {
+  return m_pick_rect.check(pos);
 }

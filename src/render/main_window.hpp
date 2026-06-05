@@ -2,8 +2,12 @@
 
 #include <glm/glm.hpp>
 
+struct SDL_Window;
+
+namespace ui::render {
+
 struct MainWindow {
-  struct SDL_Window *w;
+  SDL_Window *w;
   void *ctx;
   glm::vec2 wnd_size;
 
@@ -11,3 +15,5 @@ struct MainWindow {
   void cleanup();
   void swap();
 };
+
+} // namespace ui::render

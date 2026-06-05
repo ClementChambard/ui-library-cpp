@@ -1,7 +1,9 @@
 #include "draw_batch_state.hpp"
+#include "../ven/stb_image.h"
 #include <GL/glew.h>
 #include <iostream>
-#include "../ven/stb_image.h"
+
+using namespace ui::render;
 
 Shader::~Shader() { glDeleteProgram(program_id); }
 
@@ -26,7 +28,7 @@ void main() {
     output_color = frag_col * texture(u_texture, frag_uvs);
 })shdr";
 
-u32 make_texture(char const *filename, bool smooth = false) {
+static u32 make_texture(char const *filename, bool smooth = false) {
   u32 out;
   glCreateTextures(GL_TEXTURE_2D, 1, &out);
 
@@ -78,7 +80,7 @@ DrawBatchState::~DrawBatchState() {
   glDeleteTextures(1, &default_tex);
 }
 
-u32 make_shader(const char *s, i32 s_s, u32 ty) {
+static u32 make_shader(const char *s, i32 s_s, u32 ty) {
   u32 shdr = glCreateShader(ty);
   glShaderSource(shdr, 1, &s, &s_s);
   glCompileShader(shdr);

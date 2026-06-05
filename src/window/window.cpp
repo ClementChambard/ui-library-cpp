@@ -1,8 +1,9 @@
 #include "window.hpp"
 #include "../base/cursor.hpp"
 #include "../control/control_widget.hpp"
-#include "../gp/gp_rect.hpp"
 #include "window_manager.hpp"
+
+using namespace ui;
 
 static constexpr f32 WINDOW_RESIZE_HANDLE_SIZE = 16.f;
 
@@ -24,37 +25,37 @@ ResizeHandleData WINDOW_RESIZE_HANDLE_DATA[8] = {
     {1, 1, 0, 0, Cursor::RESIZENWSE, 1, 1},
 };
 
-glm::vec2 get_resize_handle_size(u32 i, glm::vec2 window_size) {
+static glm::vec2 get_resize_handle_size(u32 i, glm::vec2 window_size) {
   auto const &d = WINDOW_RESIZE_HANDLE_DATA[i];
   f32 w = WINDOW_RESIZE_HANDLE_SIZE;
   if (d.w != 0)
-    w = window_size.x;
+    w = window_size.x - WINDOW_RESIZE_HANDLE_SIZE;
   f32 h = WINDOW_RESIZE_HANDLE_SIZE;
   if (d.h != 0)
-    h = window_size.y;
+    h = window_size.y - WINDOW_RESIZE_HANDLE_SIZE;
   return {w, h};
 }
 
-glm::vec2 get_resize_handle_pos(u32 i, glm::vec2 window_size) {
+static glm::vec2 get_resize_handle_pos(u32 i, glm::vec2 window_size) {
   auto const &d = WINDOW_RESIZE_HANDLE_DATA[i];
   f32 x = 0;
   if (d.x == -1)
-    x = -WINDOW_RESIZE_HANDLE_SIZE;
+    x = -WINDOW_RESIZE_HANDLE_SIZE / 2.f;
   if (d.x == 1)
-    x = window_size.x;
+    x = window_size.x - WINDOW_RESIZE_HANDLE_SIZE / 2.f;
   f32 y = 0;
   if (d.y == -1)
-    y = -WINDOW_RESIZE_HANDLE_SIZE;
+    y = -WINDOW_RESIZE_HANDLE_SIZE / 2.f;
   if (d.y == 1)
-    y = window_size.y;
+    y = window_size.y - WINDOW_RESIZE_HANDLE_SIZE / 2.f;
   return {x, y};
 }
 
-void set_resize_handle_cursor(u32 i) {
+static void set_resize_handle_cursor(u32 i) {
   Cursor::set(WINDOW_RESIZE_HANDLE_DATA[i].cursor);
 }
 
-void on_resize_window(Window &w, glm::vec2 direction, u32 handle_id) {
+static void on_resize_window(Window &w, glm::vec2 direction, u32 handle_id) {
   auto const &d = WINDOW_RESIZE_HANDLE_DATA[handle_id];
   auto new_size = w.m_current_size;
 
@@ -92,45 +93,54 @@ void on_resize_window(Window &w, glm::vec2 direction, u32 handle_id) {
     w.set_size(new_size);
 }
 
-RectGPWidget *new_resize_handle(Window &w, u32 id) {
-  auto rect = RectGPWidget::make_event_handle(
-      &w, get_resize_handle_size(id, w.m_current_size));
-  w.add_event_listener(MOUSE_ENTER_EVENT, rect, [id](Event *, Window *w) {
-    w->m_current_resize_handle = id;
-    set_resize_handle_cursor(id);
-  });
-  w.add_event_listener(MOUSE_LEAVE_EVENT, rect, [](Event *, Window *w) {
-    w->m_current_resize_handle = 0;
-    Cursor::reset();
-  });
-  w.add_event_listener<MouseDragEvent>(
-      MOUSE_DRAG_EVENT, rect,
-      [id](MouseDragEvent *e, Window *w) { on_resize_window(*w, e->pos, id); });
-  return rect;
+static constexpr u32 NO_HANDLE = 0xffffffff;
+static u32 get_resize_handle_id(MouseArea *ma, MARect *array) {
+  static constexpr u32 handle_count =
+      sizeof(Window::m_resize_handles) / sizeof(Window::m_resize_handles[0]);
+  if (ma >= array && ma < array + handle_count) {
+    return u32((MARect *)ma - array);
+  } else {
+    return NO_HANDLE;
+  }
 }
 
 Window::Window() : Widget() {
   WindowManager::INSTANCE->register_window(this);
 
-  m_event_fallback = RectGPWidget::make_event_handle(this, m_current_size);
+  add_event_listener<MouseDragEvent>(
+      event::MOUSE_DRAG, this, [](MouseDragEvent *e, Window *w) {
+        if (e->ma == &w->m_move_handle) {
+          w->set_pos(w->m_pos + e->pos);
+        } else if (u32 id = get_resize_handle_id(e->ma, w->m_resize_handles);
+                   id != NO_HANDLE) {
+          on_resize_window(*w, e->pos, id);
+        }
+      });
 
-  // clang-format off
-  m_move_handle = RectGPWidget::make_event_handle(this, m_current_size);
-  add_event_listener<MouseDragEvent>(MOUSE_DRAG_EVENT, m_move_handle, [](MouseDragEvent *e, Window *w) { w->set_pos(w->m_pos + e->pos); });
-  add_event_listener(MOUSE_PRESS_EVENT, [](Event *, Window *w) { Event e(WINDOW_ACTIVATE_EVENT); w->dispatch_event(&e); });
-  // clang-format on
+  add_event_listener(event::MOUSE_PRESS, [](Event *, Window *w) {
+    Event e(WINDOW_ACTIVATE_EVENT);
+    w->dispatch_event(&e);
+  });
 
-  for (u32 i = 0; i < 8; i++)
-    m_resize_handles[i] = new_resize_handle(*this, i);
+  add_event_listener<MouseEvent>(
+      event::MOUSE_ENTER, this, [](MouseEvent *e, Window *w) {
+        if (u32 id = get_resize_handle_id(e->ma, w->m_resize_handles);
+            id != NO_HANDLE) {
+          w->m_current_resize_handle = id;
+          set_resize_handle_cursor(id);
+        }
+      });
+
+  add_event_listener<MouseEvent>(event::MOUSE_LEAVE, this,
+                                 [](MouseEvent *e, Window *w) {
+                                   if (get_resize_handle_id(e->ma, w->m_resize_handles) != NO_HANDLE) {
+                                     w->m_current_resize_handle = 0;
+                                     Cursor::reset();
+                                   }
+                                 });
 }
 
-Window::~Window() {
-  delete m_content;
-  delete m_event_fallback;
-  delete m_move_handle;
-  for (auto h : m_resize_handles)
-    delete h;
-}
+Window::~Window() { delete m_content; }
 
 void Window::set_content(Widget *w) {
   m_content = w;
@@ -146,30 +156,30 @@ void Window::render_at(glm::vec2 pos, CmdList &out_commands) const {
   draw_disable_scissor(out_commands);
 }
 
-GPWidget *Window::get_hovered_gp(glm::vec2 pos) {
+MouseArea *Window::get_hovered_ma(glm::vec2 pos) {
   pos -= m_pos;
 
-  GPWidget *gp = nullptr;
+  MouseArea *ma = nullptr;
 
   if (!m_fit_to_content) {
     for (u32 i = 0; i < 8; i++) {
-      gp = m_resize_handles[i]->get_hovered_gp(
-          pos - get_resize_handle_pos(i, m_current_size));
-      if (gp != nullptr)
-        return gp;
+      ma = m_resize_handles[i].check(pos -
+                                     get_resize_handle_pos(i, m_current_size));
+      if (ma != nullptr)
+        return ma;
     }
   }
 
   if (m_content)
-    gp = m_content->get_hovered_gp(pos - m_content_offset);
-  if (gp)
-    return gp;
+    ma = m_content->get_hovered_ma(pos - m_content_offset);
+  if (ma)
+    return ma;
 
-  gp = m_move_handle->get_hovered_gp(pos);
-  if (gp)
-    return gp;
+  ma = m_move_handle.check(pos);
+  if (ma)
+    return ma;
 
-  return m_event_fallback->get_hovered_gp(pos);
+  return m_event_fallback.check(pos);
 }
 
 void Window::calc_min_max_size() {
@@ -184,12 +194,11 @@ void Window::recalc_layout(glm::vec2 size) {
     m_content->lay({this, size, size});
   }
 
-  m_event_fallback->m_current_size = m_current_size;
-  m_move_handle->m_current_size = m_current_size;
+  m_event_fallback.set_size(m_current_size);
+  m_move_handle.set_size(m_current_size);
 
   for (u32 i = 0; i < 8; i++) {
-    m_resize_handles[i]->m_current_size =
-        get_resize_handle_size(i, m_current_size);
+    m_resize_handles[i].set_size(get_resize_handle_size(i, m_current_size));
   }
 }
 

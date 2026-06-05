@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 
+namespace ui {
+
 struct Font {
   u32 tex_id;
   u32 tex_w, tex_h;
@@ -36,3 +38,5 @@ struct Font {
 
   static Font *DEFAULT;
 };
+
+} // namespace ui

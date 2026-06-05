@@ -1,5 +1,7 @@
 #include "row_widget.hpp"
 
+using namespace ui;
+
 void RowWidget::render_at(glm::vec2 pos, CmdList &out_commands) const {
   for (auto const &c : m_children) {
     c.widget->render_at(pos + c.pos, out_commands);

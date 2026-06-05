@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <type_traits>
 
+namespace ui {
+
 struct CollectionChildHolder {
   Widget *widget = nullptr;
   glm::vec2 pos{};
@@ -20,14 +22,14 @@ struct CollectionWidget : Widget {
       delete c.widget;
   }
 
-  struct GPWidget *get_hovered_gp(glm::vec2 pos) override {
+  struct MouseArea *get_hovered_ma(glm::vec2 pos) override {
     if (!point_in_widget(pos))
       return nullptr;
-    GPWidget *out = nullptr;
+    MouseArea *out = nullptr;
     for (u32 i = 0; i < m_children.size(); i++) {
-      auto gp = m_children[i].widget->get_hovered_gp(pos - m_children[i].pos);
-      if (gp)
-        out = gp;
+      auto ma = m_children[i].widget->get_hovered_ma(pos - m_children[i].pos);
+      if (ma)
+        out = ma;
     }
     return out;
   }
@@ -46,3 +48,5 @@ struct CollectionWidget : Widget {
 
   std::vector<Holder> m_children;
 };
+
+} // namespace ui

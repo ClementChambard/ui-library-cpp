@@ -1,8 +1,10 @@
 #pragma once
 
-#include "../base/color.hpp"
+#include "../base/colors.hpp"
 #include "../defines.hpp"
 #include <glm/glm.hpp>
+
+namespace ui::render {
 
 struct Shader {
   u32 program_id = 0;
@@ -37,3 +39,5 @@ struct DrawBatchState {
   u32 vertex(vertex_t v);
   void index(u32 i);
 };
+
+} // namespace ui::render

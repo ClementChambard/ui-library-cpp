@@ -3,34 +3,13 @@
 #include <cassert>
 #include <glm/fwd.hpp>
 
+using namespace ui::render;
+
 static constexpr glm::vec2 UV0 = {0, 0};
 
-void unstrip_indices(DrawBatchState &b, std::vector<u16> &&strip) {
-  if (strip.size() == 0)
-    return;
-  assert(strip.size() >= 3);
-  u32 last1 = strip[0];
-  u32 last2 = strip[1];
-  bool pair = true;
-  for (u64 i = 2; i < strip.size(); i++) {
-    u32 cur = strip[i];
-    b.indices.push_back(last1);
-    if (pair) {
-      b.indices.push_back(last2);
-      b.indices.push_back(cur);
-    } else {
-      b.indices.push_back(cur);
-      b.indices.push_back(last2);
-    }
-    last1 = last2;
-    last2 = cur;
-    pair = !pair;
-  }
-}
-
-void arc_inner_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
-                        Color col, u32 n_point_needed, f32 fst_angle, f32 angle,
-                        f32 radius) {
+static void arc_inner_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
+                               ui::Color col, u32 n_point_needed, f32 fst_angle,
+                               f32 angle, f32 radius) {
   f32 incr = angle / (n_point_needed + 1.f);
   for (u32 i = 0; i < n_point_needed; i++) {
     f32 a_pos = incr * (1 + i);
@@ -40,14 +19,14 @@ void arc_inner_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
   }
 }
 
-f32 calc_point_needed(f32 radius) {
+static i32 calc_point_needed(f32 radius) {
   if (radius == 0)
     return 0;
   // TODO: cache result to avoid too much trig ?
   return std::numbers::pi / (4.0f * std::acos(1 - 0.33 / radius));
 }
 
-glm::vec4 calc_point_needed(glm::vec4 radius) {
+static glm::ivec4 calc_point_needed(glm::vec4 radius) {
   return {
       calc_point_needed(radius.x),
       calc_point_needed(radius.y),
@@ -56,10 +35,11 @@ glm::vec4 calc_point_needed(glm::vec4 radius) {
   };
 }
 
-void round_rectangle_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
-                              glm::vec2 size, Color col, glm::vec4 radius,
-                              u32 &o_first_index, u32 &o_last_index,
-                              glm::vec4 n_point_needed) {
+static void round_rectangle_vertices(std::vector<vertex_t> &vertices,
+                                     glm::vec2 pos, glm::vec2 size,
+                                     ui::Color col, glm::vec4 radius,
+                                     u32 &o_first_index, u32 &o_last_index,
+                                     glm::ivec4 n_point_needed) {
   o_first_index = vertices.size();
 
   glm::vec2 tl_inner = pos + glm::vec2(radius.x, radius.x);
@@ -80,13 +60,13 @@ void round_rectangle_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
 
   u32 n_vertex = n_point_needed.x + n_point_needed.y + n_point_needed.z +
                  n_point_needed.w + 4;
-  if (l_degenerate)
+  if (!l_degenerate)
     n_vertex++;
-  if (t_degenerate)
+  if (!t_degenerate)
     n_vertex++;
-  if (r_degenerate)
+  if (!r_degenerate)
     n_vertex++;
-  if (b_degenerate)
+  if (!b_degenerate)
     n_vertex++;
 
   vertices.reserve(n_vertex);
@@ -97,47 +77,63 @@ void round_rectangle_vertices(std::vector<vertex_t> &vertices, glm::vec2 pos,
                        std::numbers::pi, std::numbers::pi / 2.f, radius.x);
     vertices.push_back({{tl_inner.x, pos.y}, UV0, col});
   } else {
-    vertices.push_back({pos, UV0, col});
+    // TODO: fix
+    for (int i = 0; i < n_point_needed.x + 2; i++) {
+      vertices.push_back({pos, UV0, col});
+    }
   }
 
   if (radius.y != 0) {
-    if (!t_degenerate)
+    if (!t_degenerate) {
       vertices.push_back({{tr_inner.x, pos.y}, UV0, col});
+    }
     arc_inner_vertices(vertices, tr_inner, col, n_point_needed.y,
                        std::numbers::pi / 2.f, std::numbers::pi / 2.f,
                        radius.y);
     vertices.push_back({{pos.x + size.x, tr_inner.y}, UV0, col});
   } else {
-    vertices.push_back({{pos.x + size.x, pos.y}, UV0, col});
+    // TODO: fix
+    for (int i = 0; i < n_point_needed.y + 2; i++) {
+      vertices.push_back({{pos.x + size.x, pos.y}, UV0, col});
+    }
   }
 
   if (radius.z != 0) {
-    if (!r_degenerate)
+    if (!r_degenerate) {
       vertices.push_back({{pos.x + size.x, br_inner.y}, UV0, col});
+    }
     arc_inner_vertices(vertices, br_inner, col, n_point_needed.z, 0,
                        std::numbers::pi / 2.f, radius.z);
     vertices.push_back({{br_inner.x, pos.y + size.y}, UV0, col});
   } else {
-    vertices.push_back({pos + size, UV0, col});
+    // TODO: fix
+    for (int i = 0; i < n_point_needed.z + 2; i++) {
+      vertices.push_back({pos + size, UV0, col});
+    }
   }
 
   if (radius.w != 0) {
-    if (!b_degenerate)
+    if (!b_degenerate) {
       vertices.push_back({{bl_inner.x, pos.y + size.y}, UV0, col});
+    }
     arc_inner_vertices(vertices, bl_inner, col, n_point_needed.w,
                        -std::numbers::pi / 2.f, std::numbers::pi / 2.f,
                        radius.w);
-    if (!l_degenerate)
+    if (!l_degenerate) {
       vertices.push_back({{pos.x, bl_inner.y}, UV0, col});
+    }
   } else {
-    vertices.push_back({{pos.x, pos.y + size.y}, UV0, col});
+    // TODO: fix
+    for (int i = 0; i < n_point_needed.w + 2; i++) {
+      vertices.push_back({{pos.x, pos.y + size.y}, UV0, col});
+    }
   }
 
   o_last_index = vertices.size();
 }
 
-void concave_polygon_triangle_fan(std::vector<u16> &indices, u32 first_index,
-                                  u32 last_index) {
+static void concave_polygon_triangle_fan(std::vector<u16> &indices,
+                                         u32 first_index, u32 last_index) {
   u32 count = last_index - first_index;
   if (count < 3)
     return;
@@ -152,8 +148,9 @@ void concave_polygon_triangle_fan(std::vector<u16> &indices, u32 first_index,
   }
 }
 
-void link_lines_strip(std::vector<u16> &indices, u32 first_index_1,
-                      u32 first_index_2, u32 count, bool wraparound = false) {
+static void link_lines_strip(std::vector<u16> &indices, u32 first_index_1,
+                             u32 first_index_2, u32 count,
+                             bool wraparound = false) {
   if (count < 2)
     return;
   u32 last_1 = first_index_1, last_2 = first_index_2;
@@ -222,6 +219,7 @@ void DrawBatch::draw_round_rectangle_outline(glm::vec2 pos, glm::vec2 size,
   auto points_needed = calc_point_needed(radius);
   round_rectangle_vertices(s->vertices, pos, size, c, radius, first_index_out,
                            last_index_out, points_needed);
+  // TODO: negative radius
   round_rectangle_vertices(
       s->vertices, pos + glm::vec2(outline_size, outline_size),
       size - 2.f * glm::vec2(outline_size, outline_size), c,
@@ -229,6 +227,44 @@ void DrawBatch::draw_round_rectangle_outline(glm::vec2 pos, glm::vec2 size,
   u32 count = last_index_out - first_index_out;
   assert(count == last_index_in - first_index_in);
   link_lines_strip(s->indices, first_index_out, first_index_in, count, true);
+}
+
+static glm::vec4 correct_radius(glm::vec4 in) {
+  if (in.x < 0)
+    in.x = 0.f;
+  if (in.y < 0)
+    in.y = 0.f;
+  if (in.z < 0)
+    in.z = 0.f;
+  if (in.w < 0)
+    in.w = 0.f;
+  return in;
+}
+
+void DrawBatch::draw_box_shadow(glm::vec2 pos, glm::vec2 size, Color c,
+                                glm::vec4 radius, f32 blur_width) {
+  auto s = static_cast<DrawBatchState *>(state);
+  f32 const blur_offset = blur_width / 2.f;
+
+  auto const radius_extern = correct_radius(radius + glm::vec4(blur_offset));
+  // TODO: negative radius
+  auto const radius_intern = correct_radius(radius - glm::vec4(blur_offset));
+
+  auto points_needed = calc_point_needed(radius_extern);
+
+  u32 first_index_out, last_index_out;
+  u32 first_index_in, last_index_in;
+  round_rectangle_vertices(s->vertices, pos - glm::vec2(blur_offset),
+                           size + glm::vec2(blur_width), {c.r, c.g, c.b, 0},
+                           radius_extern, first_index_out, last_index_out,
+                           points_needed);
+  round_rectangle_vertices(s->vertices, pos + glm::vec2(blur_offset),
+                           size - glm::vec2(blur_width), c, radius_intern,
+                           first_index_in, last_index_in, points_needed);
+  u32 count = last_index_out - first_index_out;
+  assert(count == last_index_in - first_index_in);
+  link_lines_strip(s->indices, first_index_out, first_index_in, count, true);
+  concave_polygon_triangle_fan(s->indices, first_index_in, last_index_in);
 }
 
 void DrawBatch::draw_textured_rectangle(u32 tex, glm::vec2 pos, glm::vec2 size,

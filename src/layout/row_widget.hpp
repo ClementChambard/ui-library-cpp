@@ -2,6 +2,8 @@
 
 #include "../base/collection_widget.hpp"
 
+namespace ui {
+
 struct RowWidget : CollectionWidget<> {
   RowWidget(Widget *parent = nullptr) : CollectionWidget(parent) {}
   ~RowWidget() = default;
@@ -12,3 +14,5 @@ struct RowWidget : CollectionWidget<> {
 
   f32 m_gap = 0.f;
 };
+
+} // namespace ui

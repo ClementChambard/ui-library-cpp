@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+namespace ui {
+
 struct Widget {
   Widget(Widget *parent = nullptr);
   virtual ~Widget();
@@ -16,7 +18,7 @@ struct Widget {
   virtual void render_at(glm::vec2 pos, CmdList &out_commands) const;
   virtual void lay(LayContext ctx);
   virtual void _append(Widget *child) { (void)child; };
-  virtual struct GPWidget *get_hovered_gp(glm::vec2 pos);
+  virtual struct MouseArea *get_hovered_ma(glm::vec2 pos);
   virtual void calc_min_max_size();
   void set_min_max_size(glm::vec2 min, glm::vec2 max);
 
@@ -52,3 +54,5 @@ struct Widget {
   Widget *m_parent = nullptr;
   Widget *m_internal_widget = nullptr;
 };
+
+} // namespace ui

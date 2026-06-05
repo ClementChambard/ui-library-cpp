@@ -5,7 +5,8 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keycode.h>
 #include <algorithm>
-#include <iostream>
+
+using namespace ui;
 
 WindowManager *WindowManager::INSTANCE = nullptr;
 
@@ -16,14 +17,14 @@ WindowManager::~WindowManager() {
     delete w;
 }
 
-GPWidget *WindowManager::get_hovered_gp(glm::vec2 pos) {
-  GPWidget *out = nullptr;
+MouseArea *WindowManager::get_hovered_ma(glm::vec2 pos) {
+  MouseArea *out = nullptr;
   for (auto w : m_windows) {
     if (!w->m_visible)
       continue;
-    auto gp = w->get_hovered_gp(pos);
-    if (gp)
-      out = gp;
+    auto ma = w->get_hovered_ma(pos);
+    if (ma)
+      out = ma;
   }
   return out;
 }
@@ -46,7 +47,7 @@ void WindowManager::activate_window(Window *w) {
   m_windows.erase(window);
   m_windows.push_back(w);
 
-  m_gped.mouse_move(m_gped.mouse_pos, {0, 0});
+  m_med.mouse_move(m_med.mouse_pos, {0, 0});
 }
 
 void WindowManager::render_all(CmdList &cmds) {
@@ -59,16 +60,16 @@ void WindowManager::render_all(CmdList &cmds) {
 
 static bool CURRENTLY_LISTENING_FOR_TEXT_INPUT = false;
 
-bool is_allowed_key_repeat(SDL_Keycode k) {
+static bool is_allowed_key_repeat(SDL_Keycode k) {
   return k == SDLK_LEFT || k == SDLK_RIGHT || k == SDLK_DOWN || k == SDLK_UP ||
          k == SDLK_DELETE || k == SDLK_BACKSPACE;
 }
 
-bool is_event_key(SDL_Keycode k) {
+static bool is_event_key(SDL_Keycode k) {
   return is_allowed_key_repeat(k) || k == SDLK_ESCAPE || k == SDLK_RETURN;
 }
 
-Key translate_key(SDL_Keycode k) {
+static Key translate_key(SDL_Keycode k) {
   switch (k) {
   case SDLK_LEFT:
     return Key::LEFT;
@@ -94,16 +95,16 @@ Key translate_key(SDL_Keycode k) {
 void WindowManager::handle_event(SDL_Event const &e) {
   switch (e.type) {
   case SDL_EVENT_MOUSE_MOTION:
-    m_gped.mouse_move({e.motion.x, e.motion.y}, {e.motion.xrel, e.motion.yrel});
+    m_med.mouse_move({e.motion.x, e.motion.y}, {e.motion.xrel, e.motion.yrel});
     break;
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    m_gped.mouse_button_down(e.button.button, {e.button.x, e.button.y});
+    m_med.mouse_button_down(e.button.button, {e.button.x, e.button.y});
     break;
   case SDL_EVENT_MOUSE_BUTTON_UP:
-    m_gped.mouse_button_up(e.button.button, {e.button.x, e.button.y});
+    m_med.mouse_button_up(e.button.button, {e.button.x, e.button.y});
     break;
   case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-    m_gped.mouse_leave();
+    m_med.mouse_leave();
     break;
   case SDL_EVENT_KEY_DOWN:
     if (e.key.repeat && !is_allowed_key_repeat(e.key.key))
@@ -129,7 +130,8 @@ void WindowManager::handle_event(SDL_Event const &e) {
   }
 }
 
-void set_focus(SDL_Window *w, ControlWidget *&current, ControlWidget *to) {
+static void set_focus(SDL_Window *w, ControlWidget *&current,
+                      ControlWidget *to) {
   if (current == to)
     return;
   current = to;
@@ -153,9 +155,9 @@ void WindowManager::focus(struct ControlWidget *w) {
     m_current_focus = nullptr;
 }
 
-void focus_next_control(SDL_Window *sdlw, ControlWidget *&current,
-                        ControlWidget *w,
-                        ControlWidget *ControlWidget::*next_ptr) {
+static void focus_next_control(SDL_Window *sdlw, ControlWidget *&current,
+                               ControlWidget *w,
+                               ControlWidget *ControlWidget::*next_ptr) {
   if (current != nullptr) {
     current->m_focused = false;
     w = current->*next_ptr;

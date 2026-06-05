@@ -1,5 +1,7 @@
 #include "widget.hpp"
 
+using namespace ui;
+
 Widget::Widget(Widget *parent) : m_parent(parent) {
   if (parent)
     parent->_append(this);
@@ -47,8 +49,8 @@ void Widget::lay(LayContext ctx) {
     return m_internal_widget->lay(ctx);
 }
 
-struct GPWidget *Widget::get_hovered_gp(glm::vec2 pos) {
-  return m_internal_widget ? m_internal_widget->get_hovered_gp(pos) : nullptr;
+struct MouseArea *Widget::get_hovered_ma(glm::vec2 pos) {
+  return m_internal_widget ? m_internal_widget->get_hovered_ma(pos) : nullptr;
 }
 
 void Widget::calc_min_max_size() { set_min_max_size({0, 0}, {10000, 10000}); }

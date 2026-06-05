@@ -1,16 +1,19 @@
 #pragma once
 
-#include "../base/color.hpp"
+#include "../base/colors.hpp"
 #include "../base/font.hpp"
 #include "../defines.hpp"
 #include <glm/glm.hpp>
 #include <string>
+
+namespace ui::render {
 
 enum RenderCommand_kind {
   RenderCommand_RECT,
   RenderCommand_RECT_BORDER,
   RenderCommand_ROUND_RECT,
   RenderCommand_ROUND_RECT_BORDER,
+  RenderCommand_BOX_SHADOW,
   RenderCommand_TRIANGLE,
   RenderCommand_TEXT,
   RenderCommand_SCISSOR,
@@ -21,7 +24,7 @@ struct RenderCommand_rect {
   glm::vec2 pos{}, size{};
   Color col{};
   f32 r_tl = 0.f, r_tr = 0.f, r_br = 0.f, r_bl = 0.f;
-  f32 outline_size = 0.f;
+  f32 outline_size = 0.f; // blur radius when making a box shadow
 };
 
 struct RenderCommand_tri {
@@ -54,7 +57,11 @@ union RenderCommand {
   RenderCommand_scissor scissor;
 };
 
-using CmdList = std::vector<RenderCommand>;
+} // namespace ui::render
+
+namespace ui {
+
+using CmdList = std::vector<render::RenderCommand>;
 
 void draw_triangle(CmdList &cmds, glm::vec2 p1, glm::vec2 p2, glm::vec2 p3,
                    Color c);
@@ -73,6 +80,8 @@ void draw_rectangle_outline(CmdList &cmds, glm::vec2 pos, glm::vec2 size,
 void draw_rectangle_outline(CmdList &cmds, glm::vec2 pos, glm::vec2 size,
                             Color c, f32 r_tl, f32 r_tr, f32 r_br, f32 r_bl,
                             f32 outline_size);
+void draw_box_shadow(CmdList &cmds, glm::vec2 pos, glm::vec2 size, Color c,
+                     f32 blur_width, f32 radius = 0.f);
 void draw_set_scissor(CmdList &cmds, glm::vec2 pos, glm::vec2 size);
 void draw_disable_scissor(CmdList &cmds);
 void draw_text(CmdList &cmds, glm::vec2 pos, std::string const &text, Color col,
@@ -84,3 +93,5 @@ void draw_text_wrap(CmdList &cmds, glm::vec2 pos, std::string const &text,
 void draw_text_multiline_wrap(CmdList &cmds, glm::vec2 pos,
                               std::string const &text, Color col,
                               f32 wrap_width, Font *font = nullptr);
+
+} // namespace ui

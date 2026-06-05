@@ -1,14 +1,12 @@
 #include "test_textinput.hpp"
-#include "../gp/gp_rect.hpp"
 #include "../window/window_manager.hpp"
+
+using namespace ui;
 
 static constexpr f32 TEXTINPUT_ROUNDING = 4.f;
 static constexpr f32 TEXTINPUT_OUTLINE_WIDTH = 1;
 static constexpr f32 TEXTINPUT_PADDING_X = 14;
 static constexpr f32 TEXTINPUT_PADDING_y = 2;
-static constexpr Color TEXTINPUT_COLOR_BG = {251, 251, 251, 255};
-static constexpr Color TEXTINPUT_COLOR_OUTLINE = {180, 182, 186, 255};
-static constexpr Color TEXTINPUT_COLOR_TEXT = {61, 61, 61, 255};
 static constexpr glm::vec2 TEXTINPUT_MIN_SIZE = {32, 32};
 
 glm::vec2 get_size(TestTextInput const &b) {
@@ -22,19 +20,17 @@ glm::vec2 get_size(TestTextInput const &b) {
 }
 
 TestTextInput::TestTextInput(Widget *parent) : ControlWidget(parent) {
-  m_pick_rect = RectGPWidget::make_event_handle(this, {200, 80});
+  m_pick_rect.set_size({200, 80});
   m_font = Font::DEFAULT;
 
   m_need_text_input = true;
 
-  add_event_listener(
-      MOUSE_PRESS_EVENT, m_pick_rect,
-      [](Event *, TestTextInput *w) { WindowManager::INSTANCE->focus(w); });
+  add_event_listener(event::MOUSE_PRESS, this, [](Event *, TestTextInput *w) {
+    WindowManager::INSTANCE->focus(w);
+  });
 
   set_min_max_size(get_size(*this), {10000, 10000});
 }
-
-TestTextInput::~TestTextInput() { delete m_pick_rect; }
 
 void TestTextInput::set_text(std::string const &t) {
   m_text = t;
@@ -45,9 +41,9 @@ void TestTextInput::set_text(std::string const &t) {
 void TestTextInput::render_at(glm::vec2 pos, CmdList &out_commands) const {
   glm::vec2 size = m_current_size;
 
-  Color bg_color = TEXTINPUT_COLOR_BG;
-  Color outline_color = TEXTINPUT_COLOR_OUTLINE;
-  Color text_color = TEXTINPUT_COLOR_TEXT;
+  Color bg_color = ColorScheme::current().input_bg;
+  Color outline_color = ColorScheme::current().secondary.border.base;
+  Color text_color = ColorScheme::current().input_fg;
   if (is_disabled()) {
     bg_color.a = 128;
     outline_color.a = 128;
@@ -67,7 +63,7 @@ void TestTextInput::render_at(glm::vec2 pos, CmdList &out_commands) const {
       GLOBAL_CURSOR_TIMER -= 60;
     if (GLOBAL_CURSOR_TIMER < 30) {
       draw_rectangle(out_commands, pos + offset + glm::vec2(text_size.x, 4),
-                     {1, text_size.y - 8}, TEXTINPUT_COLOR_TEXT);
+                     {1, text_size.y - 8}, text_color);
     }
   }
   draw_rectangle_outline(out_commands, pos, size, outline_color,
@@ -97,9 +93,9 @@ void TestTextInput::lay(LayContext ctx) {
 
   m_current_size = glm::max(wanted_size, ctx.min_size);
 
-  m_pick_rect->m_current_size = m_current_size;
+  m_pick_rect.set_size(m_current_size);
 }
 
-GPWidget *TestTextInput::get_hovered_gp(glm::vec2 pos) {
-  return m_pick_rect->get_hovered_gp(pos);
+MouseArea *TestTextInput::get_hovered_ma(glm::vec2 pos) {
+  return m_pick_rect.check(pos);
 }

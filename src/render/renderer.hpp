@@ -3,6 +3,8 @@
 #include "draw_batch.hpp"
 #include "render_command.hpp"
 
+namespace ui::render {
+
 struct Renderer {
   DrawBatch *b;
   CmdList cmd_list;
@@ -12,3 +14,5 @@ struct Renderer {
   void render();
   void update_size(glm::vec2 s);
 };
+
+} // namespace ui::render

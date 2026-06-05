@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 
+using namespace ui;
+
 // TODO: ascii
 
 Font *Font::DEFAULT = nullptr;

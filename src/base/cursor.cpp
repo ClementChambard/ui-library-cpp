@@ -3,6 +3,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_mouse.h>
 
+using namespace ui;
+
 static SDL_Cursor *s_MOUSE_CURSORS[Cursor::COUNT];
 static Cursor::Kind s_CUR_CURSOR = Cursor::ARROW;
 static u32 s_INIT_COUNT = 0;

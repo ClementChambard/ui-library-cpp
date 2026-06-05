@@ -2,6 +2,8 @@
 
 #include "../base/widget.hpp"
 
+namespace ui {
+
 enum class Key {
   ESCAPE,
   RETURN,
@@ -35,3 +37,5 @@ struct ControlWidget : Widget {
   ControlWidget *m_prev_control_in_window = nullptr;
   struct Window *m_window = nullptr;
 };
+
+} // namespace ui

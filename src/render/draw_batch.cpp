@@ -4,6 +4,8 @@
 #include <GL/glew.h>
 #include <cassert>
 
+using namespace ui::render;
+
 static constexpr glm::vec2 UV0 = {0, 0};
 
 DrawBatch::DrawBatch() {
