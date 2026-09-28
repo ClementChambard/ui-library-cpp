@@ -14,7 +14,8 @@ struct Window : Widget {
 
   void render_at(glm::vec2 pos, CmdList &out_commands) const override;
   void lay(LayContext) override { recalc_layout(m_current_size); }
-  MouseArea *get_hovered_ma(glm::vec2 pos) override;
+  MouseArea *get_hovered_ma(glm::vec2 pos,
+                            glm::vec2 *out_pos = nullptr) override;
   void calc_min_max_size() override;
   virtual void recalc_layout(glm::vec2 size);
   virtual void set_size(glm::vec2 size);

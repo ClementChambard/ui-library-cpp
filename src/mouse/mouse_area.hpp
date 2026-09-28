@@ -20,10 +20,11 @@ struct MouseArea {
 struct MouseButtonEvent : MouseEvent {
   u32 button_id = 0;
   glm::vec2 pos{};
+  glm::vec2 rel_pos{};
 
-  MouseButtonEvent(bool press, u32 button_id, glm::vec2 pos)
+  MouseButtonEvent(bool press, u32 button_id, glm::vec2 pos, glm::vec2 rel_pos)
       : MouseEvent(press ? event::MOUSE_PRESS : event::MOUSE_RELEASE),
-        button_id(button_id), pos(pos) {}
+        button_id(button_id), pos(pos), rel_pos(rel_pos) {}
 };
 
 struct MouseDragEvent : MouseEvent {

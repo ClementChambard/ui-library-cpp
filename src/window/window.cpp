@@ -131,13 +131,13 @@ Window::Window() : Widget() {
         }
       });
 
-  add_event_listener<MouseEvent>(event::MOUSE_LEAVE, this,
-                                 [](MouseEvent *e, Window *w) {
-                                   if (get_resize_handle_id(e->ma, w->m_resize_handles) != NO_HANDLE) {
-                                     w->m_current_resize_handle = 0;
-                                     Cursor::reset();
-                                   }
-                                 });
+  add_event_listener<MouseEvent>(
+      event::MOUSE_LEAVE, this, [](MouseEvent *e, Window *w) {
+        if (get_resize_handle_id(e->ma, w->m_resize_handles) != NO_HANDLE) {
+          w->m_current_resize_handle = 0;
+          Cursor::reset();
+        }
+      });
 }
 
 Window::~Window() { delete m_content; }
@@ -156,30 +156,30 @@ void Window::render_at(glm::vec2 pos, CmdList &out_commands) const {
   draw_disable_scissor(out_commands);
 }
 
-MouseArea *Window::get_hovered_ma(glm::vec2 pos) {
+MouseArea *Window::get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos) {
   pos -= m_pos;
 
   MouseArea *ma = nullptr;
 
   if (!m_fit_to_content) {
     for (u32 i = 0; i < 8; i++) {
-      ma = m_resize_handles[i].check(pos -
-                                     get_resize_handle_pos(i, m_current_size));
+      ma = m_resize_handles[i].check(
+          pos - get_resize_handle_pos(i, m_current_size), out_pos);
       if (ma != nullptr)
         return ma;
     }
   }
 
   if (m_content)
-    ma = m_content->get_hovered_ma(pos - m_content_offset);
+    ma = m_content->get_hovered_ma(pos - m_content_offset, out_pos);
   if (ma)
     return ma;
 
-  ma = m_move_handle.check(pos);
+  ma = m_move_handle.check(pos, out_pos);
   if (ma)
     return ma;
 
-  return m_event_fallback.check(pos);
+  return m_event_fallback.check(pos, out_pos);
 }
 
 void Window::calc_min_max_size() {

@@ -20,11 +20,13 @@ struct ControlWidget : Widget {
   ControlWidget(Widget *parent);
   ~ControlWidget() override;
 
-  bool m_focused = false;
   bool m_disabled = false;
   bool m_need_text_input = false;
 
   bool is_disabled() const;
+  bool is_focused() const { return m_focused; }
+  virtual void focus() { m_focused = true; }
+  virtual void unfocus() { m_focused = false; }
 
   void lay(LayContext ctx) override;
   void set_disabled(bool val) { m_disabled = val; }
@@ -36,6 +38,9 @@ struct ControlWidget : Widget {
   ControlWidget *m_next_control_in_window = nullptr;
   ControlWidget *m_prev_control_in_window = nullptr;
   struct Window *m_window = nullptr;
+
+private:
+  bool m_focused = false;
 };
 
 } // namespace ui

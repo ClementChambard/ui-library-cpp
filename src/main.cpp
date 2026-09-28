@@ -1,6 +1,6 @@
 #include "base/shape_widget.hpp"
 #include "control/button.hpp"
-#include "control/test_textinput.hpp"
+#include "control/text_input.hpp"
 #include "layout/flex_widget.hpp"
 #include "layout/row_widget.hpp"
 #include "render/frame_timing.hpp"
@@ -36,7 +36,7 @@ void make_vue() {
   button3->set_disabled(true);
   auto button4 = new ui::Button(row);
   button4->set_text("Light Mode");
-  auto input = new ui::TestTextInput(row);
+  auto input = new ui::TextInput(row);
   (void)input;
 
   ui::Dialog *panel_2 = new ui::Dialog;
@@ -45,6 +45,11 @@ void make_vue() {
   panel_2->m_title = "My Dialog title";
   panel_2->set_standard_buttons(3);
   panel_2->m_visible = false;
+
+  row->add_event_listener(ui::event::TEXT_CHANGE, input,
+                          [input, button3](ui::Event *, ui::Widget *) {
+                            button3->set_text(input->m_controller.m_text);
+                          });
 
   row->add_event_listener(
       ui::event::BUTTON_CLICK, button, [button2](ui::Event *, ui::Widget *) {

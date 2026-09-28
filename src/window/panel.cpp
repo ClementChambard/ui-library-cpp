@@ -152,14 +152,15 @@ void Panel::calc_min_max_size() {
   recalc_layout({});
 }
 
-MouseArea *Panel::get_hovered_ma(glm::vec2 pos) {
+MouseArea *Panel::get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos) {
   f32 x = pos.x - m_pos.x - (PANEL_SIZE_TOPBAR - PANEL_SIZE_BUTTON) / 2.f;
   f32 y = pos.y - m_pos.y - (PANEL_SIZE_TOPBAR - PANEL_SIZE_BUTTON) / 2.f;
   for (auto &b : m_panel_buttons) {
-    if (b.check(glm::vec2(x, y)))
+    if (b.check(glm::vec2(x, y), out_pos)) {
       return &b;
+    }
     x -= PANEL_SPACING_BUTTON;
   }
 
-  return Window::get_hovered_ma(pos);
+  return Window::get_hovered_ma(pos, out_pos);
 }

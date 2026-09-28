@@ -97,7 +97,7 @@ void Button::render_at(glm::vec2 pos, CmdList &out_commands) const {
   draw_rectangle(out_commands, pos, size, bg_color, BUTTON_ROUNDING);
 
   f32 outline_size = BUTTON_OUTLINE_WIDTH;
-  if (m_focused)
+  if (is_focused())
     outline_size += 1.f;
   draw_rectangle_outline(out_commands, pos, size, outline_color,
                          BUTTON_ROUNDING, outline_size);
@@ -120,8 +120,4 @@ void Button::lay(LayContext ctx) {
   m_current_size = glm::max(wanted_size, ctx.min_size);
 
   m_pick_rect.set_size(m_current_size);
-}
-
-MouseArea *Button::get_hovered_ma(glm::vec2 pos) {
-  return m_pick_rect.check(pos);
 }

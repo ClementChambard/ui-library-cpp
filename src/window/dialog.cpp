@@ -115,15 +115,17 @@ void Dialog::calc_min_max_size() {
   recalc_layout({});
 }
 
-MouseArea *Dialog::get_hovered_ma(glm::vec2 pos) {
+MouseArea *Dialog::get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos) {
 
   auto ma = m_standard_buttons->get_hovered_ma(
       pos - m_pos -
-      glm::vec2(DIALOG_PADDING,
-                DIALOG_PADDING + m_current_size.y - DIALOG_SIZE_BOTBAR));
-  if (ma)
+          glm::vec2(DIALOG_PADDING,
+                    DIALOG_PADDING + m_current_size.y - DIALOG_SIZE_BOTBAR),
+      out_pos);
+  if (ma) {
     return ma;
-  ma = Window::get_hovered_ma(pos);
+  }
+  ma = Window::get_hovered_ma(pos, out_pos);
   if (m_is_modal && ma == nullptr)
     ma = &m_event_fallback;
   return ma;

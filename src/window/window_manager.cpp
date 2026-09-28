@@ -17,12 +17,12 @@ WindowManager::~WindowManager() {
     delete w;
 }
 
-MouseArea *WindowManager::get_hovered_ma(glm::vec2 pos) {
+MouseArea *WindowManager::get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos) {
   MouseArea *out = nullptr;
   for (auto w : m_windows) {
     if (!w->m_visible)
       continue;
-    auto ma = w->get_hovered_ma(pos);
+    auto ma = w->get_hovered_ma(pos, out_pos);
     if (ma)
       out = ma;
   }
@@ -98,10 +98,12 @@ void WindowManager::handle_event(SDL_Event const &e) {
     m_med.mouse_move({e.motion.x, e.motion.y}, {e.motion.xrel, e.motion.yrel});
     break;
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    m_med.mouse_button_down(e.button.button, {e.button.x, e.button.y});
+    m_med.mouse_button_down(e.button.button, {e.button.x, e.button.y},
+                            m_med.mouse_rel_pos);
     break;
   case SDL_EVENT_MOUSE_BUTTON_UP:
-    m_med.mouse_button_up(e.button.button, {e.button.x, e.button.y});
+    m_med.mouse_button_up(e.button.button, {e.button.x, e.button.y},
+                          m_med.mouse_rel_pos);
     break;
   case SDL_EVENT_WINDOW_MOUSE_LEAVE:
     m_med.mouse_leave();
@@ -135,7 +137,7 @@ static void set_focus(SDL_Window *w, ControlWidget *&current,
   if (current == to)
     return;
   current = to;
-  current->m_focused = true;
+  current->focus();
   if (current->m_need_text_input != CURRENTLY_LISTENING_FOR_TEXT_INPUT) {
     CURRENTLY_LISTENING_FOR_TEXT_INPUT = current->m_need_text_input;
     if (current->m_need_text_input) {
@@ -148,10 +150,11 @@ static void set_focus(SDL_Window *w, ControlWidget *&current,
 
 void WindowManager::focus(struct ControlWidget *w) {
   if (m_current_focus != nullptr)
-    m_current_focus->m_focused = false;
-  if (w != nullptr)
+    m_current_focus->unfocus();
+  if (w != nullptr) {
+    activate_window(w->m_window);
     set_focus(m_main_window.w, m_current_focus, w);
-  else
+  } else
     m_current_focus = nullptr;
 }
 
@@ -159,7 +162,7 @@ static void focus_next_control(SDL_Window *sdlw, ControlWidget *&current,
                                ControlWidget *w,
                                ControlWidget *ControlWidget::*next_ptr) {
   if (current != nullptr) {
-    current->m_focused = false;
+    current->unfocus();
     w = current->*next_ptr;
   }
   auto orig_w = w;
@@ -190,7 +193,7 @@ void WindowManager::focus_prev() {
 void WindowManager::unfocus() {
   if (m_current_focus == nullptr)
     return;
-  m_current_focus->m_focused = false;
+  m_current_focus->unfocus();
   m_current_focus = nullptr;
   CURRENTLY_LISTENING_FOR_TEXT_INPUT = false;
   SDL_StopTextInput(m_main_window.w);

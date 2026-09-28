@@ -18,7 +18,7 @@ struct Widget {
   virtual void render_at(glm::vec2 pos, CmdList &out_commands) const;
   virtual void lay(LayContext ctx);
   virtual void _append(Widget *child) { (void)child; };
-  virtual struct MouseArea *get_hovered_ma(glm::vec2 pos);
+  virtual struct MouseArea *get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos = nullptr);
   virtual void calc_min_max_size();
   void set_min_max_size(glm::vec2 min, glm::vec2 max);
 

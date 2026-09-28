@@ -8,7 +8,7 @@ namespace ui {
 struct MARect : MouseArea {
   MARect(Widget *parent, glm::vec2 size) : MouseArea(parent), m_size(size) {}
 
-  MouseArea *check(glm::vec2 pt);
+  MouseArea *check(glm::vec2 pt, glm::vec2 *out_pos);
 
   void set_size(glm::vec2 s) { m_size = s; }
 private:

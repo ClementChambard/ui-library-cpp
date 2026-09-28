@@ -49,8 +49,9 @@ void Widget::lay(LayContext ctx) {
     return m_internal_widget->lay(ctx);
 }
 
-struct MouseArea *Widget::get_hovered_ma(glm::vec2 pos) {
-  return m_internal_widget ? m_internal_widget->get_hovered_ma(pos) : nullptr;
+struct MouseArea *Widget::get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos) {
+  return m_internal_widget ? m_internal_widget->get_hovered_ma(pos, out_pos)
+                           : nullptr;
 }
 
 void Widget::calc_min_max_size() { set_min_max_size({0, 0}, {10000, 10000}); }

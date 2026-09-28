@@ -36,7 +36,8 @@ void StandardButtons::lay(LayContext ctx) {
   m_current_size = ctx.min_size;
 }
 
-struct MouseArea *StandardButtons::get_hovered_ma(glm::vec2 pos) {
+struct MouseArea *StandardButtons::get_hovered_ma(glm::vec2 pos,
+                                                  glm::vec2 *out_pos) {
   if (!point_in_widget(pos))
     return nullptr;
   pos = pos - glm::vec2(m_current_size.x, 0);
@@ -45,7 +46,7 @@ struct MouseArea *StandardButtons::get_hovered_ma(glm::vec2 pos) {
       continue;
     auto b = m_standard_buttons[i];
     pos.x += b->m_current_size.x;
-    auto ma = b->get_hovered_ma(pos);
+    auto ma = b->get_hovered_ma(pos, out_pos);
     if (ma != nullptr)
       return ma;
     pos.x += STANDARD_BUTTONS_GAP;

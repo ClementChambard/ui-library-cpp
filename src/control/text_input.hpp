@@ -2,42 +2,39 @@
 
 #include "../mouse/ma_rect.hpp"
 #include "control_widget.hpp"
+#include "text_edit_controller.hpp"
 
 namespace ui {
 
-struct Button : ControlWidget {
-  Button(Widget *parent = nullptr);
+struct TextInput : ControlWidget {
+  TextInput(Widget *parent = nullptr);
 
   void render_at(glm::vec2 pos, CmdList &out_commands) const override;
   void lay(LayContext ctx) override;
   MouseArea *get_hovered_ma(glm::vec2 pos,
                             glm::vec2 *out_pos = nullptr) override {
+
     return m_pick_rect.check(pos, out_pos);
   }
-  void on_key(Key k) override;
+  void focus() override {
+    ControlWidget::focus();
+    m_controller.m_active = true;
+  }
+  void unfocus() override {
+    ControlWidget::unfocus();
+    m_controller.m_active = false;
+    m_controller.clear_selection();
+  }
 
+  void on_key(Key k) override;
+  void on_text(char const *text) override;
   void set_text(std::string const &text);
 
-  std::string m_text = "";
+  TextEditController m_controller;
   Font *m_font = nullptr;
 
-  enum Kind {
-    PRIMARY,
-    SECONDARY,
-    // TODO: more
-  } m_kind = SECONDARY;
-
 private:
-  bool m_hovering = false;
-  bool m_pressing = false;
-  // struct RectGPWidget *m_pick_rect = nullptr;
   MARect m_pick_rect{this, {}};
-
-  void on_drag_end(Event *);
-  void on_enter(Event *);
-  void on_leave(Event *);
-  void on_press(MouseButtonEvent *e);
-  void on_release(MouseButtonEvent *e);
 };
 
 } // namespace ui

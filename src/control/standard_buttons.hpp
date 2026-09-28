@@ -15,7 +15,8 @@ struct StandardButtons : Widget {
 
   void render_at(glm::vec2 pos, CmdList &out_commands) const override;
   void lay(LayContext ctx) override;
-  struct MouseArea *get_hovered_ma(glm::vec2 pos) override;
+  struct MouseArea *get_hovered_ma(glm::vec2 pos,
+                                   glm::vec2 *out_pos = nullptr) override;
   void calc_min_max_size() override;
 
   void set_mask(u32 v);

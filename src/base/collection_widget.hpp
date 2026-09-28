@@ -22,12 +22,12 @@ struct CollectionWidget : Widget {
       delete c.widget;
   }
 
-  struct MouseArea *get_hovered_ma(glm::vec2 pos) override {
+  struct MouseArea *get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos = nullptr) override {
     if (!point_in_widget(pos))
       return nullptr;
     MouseArea *out = nullptr;
     for (u32 i = 0; i < m_children.size(); i++) {
-      auto ma = m_children[i].widget->get_hovered_ma(pos - m_children[i].pos);
+      auto ma = m_children[i].widget->get_hovered_ma(pos - m_children[i].pos, out_pos);
       if (ma)
         out = ma;
     }

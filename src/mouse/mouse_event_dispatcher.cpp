@@ -3,17 +3,19 @@
 
 using namespace ui;
 
-void MouseEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos) {
+void MouseEventDispatcher::mouse_button_down(u32 button_id, glm::vec2 pos,
+                                             glm::vec2 rel_pos) {
   if (cur) {
-    MouseButtonEvent mbe(true, button_id, pos);
+    MouseButtonEvent mbe(true, button_id, pos, rel_pos);
     cur->dispatch_event(&mbe);
     pressing = cur;
   }
 }
 
-void MouseEventDispatcher::mouse_button_up(u32 button_id, glm::vec2 pos) {
+void MouseEventDispatcher::mouse_button_up(u32 button_id, glm::vec2 pos,
+                                           glm::vec2 rel_pos) {
   if (cur) {
-    MouseButtonEvent mbe(false, button_id, pos);
+    MouseButtonEvent mbe(false, button_id, pos, rel_pos);
     cur->dispatch_event(&mbe);
   }
   if (dragging) {
@@ -49,7 +51,7 @@ void MouseEventDispatcher::mouse_move(glm::vec2 pos, glm::vec2 rel) {
     MouseDragEvent evt(rel);
     dragging->dispatch_event(&evt);
   }
-  MouseArea *ma = WindowManager::INSTANCE->get_hovered_ma(pos);
+  MouseArea *ma = WindowManager::INSTANCE->get_hovered_ma(pos, &mouse_rel_pos);
   if (ma == cur)
     return;
   if (cur) {

@@ -9,7 +9,7 @@ union SDL_Event;
 namespace ui {
 
 struct WindowManager {
-  MouseArea *get_hovered_ma(glm::vec2 pos);
+  MouseArea *get_hovered_ma(glm::vec2 pos, glm::vec2 *out_pos = nullptr);
   void register_window(Window *w);
   void activate_window(Window *w);
   void render_all(CmdList &cmds);

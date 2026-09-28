@@ -20,5 +20,6 @@ static constexpr Kind MOUSE_DRAG = 7;
 // Control Events
 static constexpr u32 BUTTON_CLICK = 200;
 static constexpr u32 STANDARD_BUTTON_CLICK = 201;
+static constexpr u32 TEXT_CHANGE = 202;
 
 } // namespace ui::event
